@@ -1,0 +1,1 @@
+{"train_loss": 0.9807452108860016, "val_loss": 0.9814646172523499, "val_dice": 0.019385988749563696, "epoch_duration": 115.36484408378601, "Learning Rate": 0.01, "Epoch": 3, "_timestamp": 1699287062.542245, "_runtime": 450.5505700111389, "_step": 2, "_wandb": {"runtime": 450}}

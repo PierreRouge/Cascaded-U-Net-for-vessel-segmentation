@@ -1,11 +1,17 @@
 # Cascaded-U-Net-for-vessel-segmentation
+by Pierre Rougé, Nicolas Passat, Odyssée Merveille
+
 Code associated with the paper Cascaded Multitask U-Net using topological loss for vessel segmentation and centerline extraction.
 
-
+<img src="../assets/architecture.pdf" alt="drawing" width="500"/>
 
 ### Installation
 
+Install envrionment with environment.yml
 
+```shell
+conda env create -f environment.yml
+```
 
 ### Usage
 
@@ -23,23 +29,25 @@ Code associated with the paper Cascaded Multitask U-Net using topological loss f
    1. To pretrain segmentation network
 
  	```shell
- 	  cd code
+ 	  cd train
  	  python train_segmentation.py
  	  ```
 
    2. To pretrain skeletonization network
 
  	```shell
- 	  cd code
+ 	  cd train
  	  python train_skeletonization.py
  	  ```
  	3. To train cascaded U-Net
-```shell
-cd code
-python train_cascaded_unet.py
-```
+ 	```shell
+ 	cd train
+ 	python train_cascaded_unet.py
+ 	```
 
-​    
+### Citation
 
+### Contact
 
+Pierre Rougé : pierre.rouge@creatis.insa-lyon.fr
 
