@@ -1,4 +1,4 @@
-# Cascaded-U-Net-for-vessel-segmentation
+# Cascaded U-Net for vessel segmentation
 by Pierre Rougé, Nicolas Passat, Odyssée Merveille
 
 Code associated with the paper Cascaded Multitask U-Net using topological loss for vessel segmentation and centerline extraction.
