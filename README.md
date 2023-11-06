@@ -6,11 +6,6 @@ Code associated with the paper Cascaded Multitask U-Net using topological loss f
 <p align="center"><img src="https://github.com/PierreRouge/Cascaded-U-Net-for-vessel-segmentation/blob/main/assets/architecture.png" alt="drawing" width="500"/>
 </p>
 
-### Results
-<p align="center"><img src="https://github.com/PierreRouge/Cascaded-U-Net-for-vessel-segmentation/blob/main/assets/results.png" alt="drawing" width="500"/>
-</p>
-
-
 ### Installation
 
 Install envrionment with environment.yml
@@ -50,6 +45,10 @@ conda env create -f environment.yml
  	cd train
  	python train_cascaded_unet.py
  	```
+### Results
+
+<p align="center"><img src="https://github.com/PierreRouge/Cascaded-U-Net-for-vessel-segmentation/blob/main/assets/results.png" alt="drawing" width="500"/>
+</p>
 
 ### Citation
 
