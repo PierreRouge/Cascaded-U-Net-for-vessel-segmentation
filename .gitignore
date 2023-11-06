@@ -162,3 +162,6 @@ cython_debug/
 #Data and results folders
 res/
 data/
+
+#W&B
+wandb
