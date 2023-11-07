@@ -160,12 +160,12 @@ cython_debug/
 #.idea/
 
 #Data and results folders
-res/
-data/
+res/*
+data/*
 
 #W&B
 train/wandb
 
 # Pretrained weights
-pretrained_weights/segmentation/
-pretrained_weights/skeletonization/
+pretrained_weights/segmentation/*
+pretrained_weights/skeletonization/*
