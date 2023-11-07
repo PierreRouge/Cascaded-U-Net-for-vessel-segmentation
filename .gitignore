@@ -167,5 +167,5 @@ data/
 train/wandb
 
 # Pretrained weights
-pretrained_weights/segmentation
-pretrained_weights/skeletonization
+pretrained_weights/segmentation/
+pretrained_weights/skeletonization/
