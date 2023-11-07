@@ -459,7 +459,7 @@ def train_loop_newskel(dataloader, validloader, model, input_, optimizer, device
             dice_val = dice_metric_pytorch(pred_val, y_val)
             dice_val = dice_val.cpu().detach().numpy()
             dice_val = np.mean(dice_val)
-            val_dice_0 += dice_val
+            val_dice_0 += dice_val.item()
 
         val_loss = val_loss_0 / len(validloader)
         val_dice = val_dice_0 / len(validloader)
@@ -512,8 +512,8 @@ def train_loop_newskel(dataloader, validloader, model, input_, optimizer, device
             "train_loss_dice": train_loss_dice_mean,
             "train_loss_cldice": train_loss_cldice_mean,
             "val_loss": val_loss,
-            "val_loss_dice": val_loss_dice,
-            "val_loss_cldice": val_loss_cldice,
+            "val_loss_dice": val_loss_dice_mean,
+            "val_loss_cldice": val_loss_cldice_mean,
             "val_dice": val_dice,
             "epoch_duration": epoch_duration}
     

@@ -1,5 +1,5 @@
-# Cascaded-U-Net-for-vessel-segmentation
-by Pierre Rougé, Nicolas Passat, Odyssée Merveille
+# Cascaded U-Net for vessel segmentation
+by [Pierre Rougé](https://github.com/PierreRouge), Nicolas Passat, Odyssée Merveille
 
 Code associated with the paper Cascaded Multitask U-Net using topological loss for vessel segmentation and centerline extraction.
 
@@ -8,7 +8,7 @@ Code associated with the paper Cascaded Multitask U-Net using topological loss f
 
 ### Installation
 
-Install envrionment with environment.yml
+Install environment with environment.yml
 
 ```shell
 conda env create -f environment.yml
@@ -45,7 +45,7 @@ conda env create -f environment.yml
  	cd train
  	python train_cascaded_unet.py
  	```
-### Results
+### Visual results
 
 <p align="center"><img src="https://github.com/PierreRouge/Cascaded-U-Net-for-vessel-segmentation/blob/main/assets/results.png" alt="drawing" width="500"/>
 </p>
