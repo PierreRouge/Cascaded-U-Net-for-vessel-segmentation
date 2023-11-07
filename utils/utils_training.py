@@ -846,7 +846,7 @@ def train_loop_cascaded(dataloader, validloader, model, optimizer, loss_param, a
                 
                 val_dice = dice_metric_pytorch(pred_val, y_val)
                 val_dice = torch.mean(val_dice)
-                val_dice_0 += val_dice
+                val_dice_0 += val_dice.item()
 
             val_loss = val_loss_0 / len(validloader)
             val_loss_seg = val_loss_seg_0 / len(validloader)
@@ -889,10 +889,10 @@ def train_loop_cascaded(dataloader, validloader, model, optimizer, loss_param, a
         end = time.time()
         epoch_duration = end - start
        
-        logs = {"train_loss":train_loss,
-                "train_loss_seg":train_loss_seg,
-                "train_loss_skel":train_loss_skel,
-                "train_loss_cldice":train_loss_cldice,
+        logs = {"train_loss": train_loss,
+                "train_loss_seg": train_loss_seg,
+                "train_loss_skel": train_loss_skel,
+                "train_loss_cldice": train_loss_cldice,
                 "val_loss": val_loss,
                 "val_loss_seg": val_loss_seg,
                 "val_loss_skel": val_loss_skel,

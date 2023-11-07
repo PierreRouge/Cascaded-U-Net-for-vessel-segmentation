@@ -51,11 +51,11 @@ parser.add_argument('alpha', metavar='alpha', type=float, nargs="?", default=0.5
 parser.add_argument('epochs', metavar='epochs', type=int, nargs="?", default=3, help='Number of epochs for training phase')
 parser.add_argument('opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
 parser.add_argument('fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
-parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=20, help='Number of batch by epoch')
+parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=3, help='Number of batch by epoch')
 parser.add_argument('job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
-parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../../../Thèse_Rougé_Pierre/Data/', help='Data directory')
+parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../data', help='Data directory')
 parser.add_argument('--features', nargs='+', type=int, default=[2, 2, 2, 2, 2, 2], help='Number of features for each layer in the decoder')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
 parser.add_argument('--entity', metavar='entity', type=str, default='', help='Entity for W&B')
@@ -71,30 +71,22 @@ device = torch.device(dev)
 
 # Save parameters for training and ceate res directories
 dir_res = '../res/cascaded_unet'
-if not os.path.exists(dir_res + '/My_Unet'):
-    os.makedirs(dir_res + '/My_Unet')
+if not os.path.exists(dir_res + '/unet_segmentation'):
+    os.makedirs(dir_res + '/unet_segmentation')
 num = 0
-for f in os.listdir(dir_res + '/My_Unet'):
+for f in os.listdir(dir_res + '/unet_segmentation'):
     num += 1
 num += 1
 
-res = dir_res + '/My_Unet/' + 'training_n°' + str(num)
+res = dir_res + '/unet_segmentation/' + 'training_n°' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/My_Unet/' + 'training_n°' + str(num)
+        res = dir_res + '/unet_segmentation/' + 'training_n°' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
-        
-
-res_seg = res + "/seg"
-res_proba = res + "/proba"
-if not os.path.exists(res_seg):
-    os.makedirs(res_seg)
-if not os.path.exists(res_proba):
-    os.makedirs(res_proba)
            
 # Set variables for parameteres
 batch_size = args.batch_size
@@ -148,14 +140,12 @@ else:
 # %% Data splitting
 
 # Select data's directories
-dir_inputs = dir_data + 'Bullit/raw/Images'
-dir_GT = dir_data + 'Bullit/raw/GT'
-
-dir_raw = dir_data + 'Bullit/raw/Images'
+dir_inputs = os.path.join(dir_data, 'Images')
+dir_GT = os.path.join(dir_data, 'GT')
 
 # Separate patients for training, validation and test
 patient = []
-for (root, directory, file) in os.walk(dir_raw):
+for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
         patient.append(split[0])

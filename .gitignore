@@ -164,4 +164,8 @@ res/
 data/
 
 #W&B
-wandb
+train/wandb
+
+# Pretrained weights
+pretrained_weights/segmentation
+pretrained_weights/skeletonization

@@ -1,5 +1,5 @@
 # Cascaded U-Net for vessel segmentation
-by [Pierre Rougé](https://github.com/PierreRouge), Nicolas Passat, Odyssée Merveille
+by [Pierre Rougé](https://github.com/PierreRouge), Nicolas Passat, [Odyssée Merveille](http://www.odyssee-merveille.com/)
 
 Code associated with the paper Cascaded Multitask U-Net using topological loss for vessel segmentation and centerline extraction.
 
@@ -23,7 +23,7 @@ conda env create -f environment.yml
    cd Cascaded-U-Net-for-vessel-segmentation
    ```
 
-2.  Put the MRA Images in data/Images and the GTs in data/GT
+2.  Put the MRA Images in data/Images,  the segmentations GTs in data/GT and the skeletons GTs in data/Skeletons
 
 3. Use one of the training function 
 
@@ -40,7 +40,8 @@ conda env create -f environment.yml
  	  cd train
  	  python train_skeletonization.py
  	  ```
- 	3. To train cascaded U-Net
+ 	3. To train cascaded U-Net : put the pretrained weights in respectively pretrained_weights/segmentation and pretrained_weights/skeletonization and run :
+ 	
  	```shell
  	cd train
  	python train_cascaded_unet.py

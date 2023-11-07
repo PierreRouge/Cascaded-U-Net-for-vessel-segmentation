@@ -52,7 +52,7 @@ parser.add_argument('opt', metavar='opt', type=str, nargs="?", default='SGD', he
 parser.add_argument('fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
 parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=20, help='Number of batch by epoch')
 parser.add_argument('job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
-parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../../../Thèse_Rougé_Pierre/Data/', help='Data directory')
+parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../data/', help='Data directory')
 parser.add_argument("--beta", type=float, default=0.33, help="Beta for skeletonization algorithm")
 parser.add_argument("--tau", type=float, default=1.0, help="Tau for skeletonization algorithm")
 parser.add_argument("--method", type=str, default='Boolean', help="Method for skeletonization")
@@ -74,30 +74,23 @@ device = torch.device(dev)
 
 # Save parameters for training and ceate res directories
 dir_res = '../res/cascaded_unet'
-if not os.path.exists(dir_res + '/Unet_newskel'):
-    os.makedirs(dir_res + '/Unet_newskel')
+if not os.path.exists(dir_res + '/unet_segmentation_newskel'):
+    os.makedirs(dir_res + '/unet_segmentation_newskel')
 num = 0
-for f in os.listdir(dir_res + '/Unet_newskel'):
+for f in os.listdir(dir_res + '/unet_segmentation_newskel'):
     num += 1
 num += 1
 
-res = dir_res + '/Unet_newskel/' + 'training_n°' + str(num)
+res = dir_res + '/unet_segmentation_newskel/' + 'training_n°' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/Unet_newskel/' + 'training_n°' + str(num)
+        res = dir_res + '/unet_segmentation_newskel/' + 'training_n°' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
     
-res_seg = res + "/seg"
-res_proba = res + "/proba"
-if not os.path.exists(res_seg):
-    os.makedirs(res_seg)
-if not os.path.exists(res_proba):
-    os.makedirs(res_proba)
-           
 # Set variables for parameteres
 batch_size = args.batch_size
 learning_rate = args.learning_rate
@@ -157,14 +150,12 @@ else:
 
 # Select data's directories
             
-dir_inputs = dir_data + 'Bullit/raw/Images'
-dir_GT = dir_data + 'Bullit/raw/GT'
-
-dir_raw = dir_data + 'Bullit/raw/Images'
+dir_inputs = os.path.join(dir_data, 'Images')
+dir_GT = os.path.join(dir_data, 'GT')
 
 # Separate patients for training, validation and test
 patient = []
-for (root, directory, file) in os.walk(dir_raw):
+for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
         patient.append(split[0])
@@ -261,8 +252,6 @@ transform_train = Compose(transform_io + transform_augmentation + [SqueezeDimd(k
     
 transform = Compose(transform_io)
 
-
-
 # Create dataset and dataloader~
 dataset_train = CacheDataset(data_train, transform_train)
 dataset_val = CacheDataset(data_val, transform)
@@ -273,11 +262,11 @@ sampler_train = SubsetRandomSampler(indices_train)
 indices_val = np.random.choice(np.arange(0, len(dataset_val)), size=size_val_epoch)
 sampler_val = SubsetRandomSampler(indices_val)
 
-train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4) 
+train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4)
 val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, num_workers=4)
 
 
-#%% Define Model and save the summary
+# %% Define Model and save the summary
 
 kernel_size = (3, 3, 3, 3)
 strides = (1, 2, 2, 2)

@@ -18,12 +18,11 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchinfo import summary
-from torchvision import transforms
 from torch.optim.lr_scheduler import LinearLR
 from torchviz import make_dot
 
 from monai.transforms import LoadImaged, RandScaleIntensityd, RandRotated, RandGaussianSmoothd, RandGaussianNoised, \
-    RandAdjustContrastd, RandAxisFlipd, RandZoomd, NormalizeIntensityd, RandSpatialCropd, EnsureChannelFirstd
+    RandAdjustContrastd, RandAxisFlipd, RandZoomd, NormalizeIntensityd, RandSpatialCropd, EnsureChannelFirstd, Compose
 from monai.data import CacheDataset
 
 
@@ -47,11 +46,11 @@ parser.add_argument('epochs', metavar='epochs', type=int, nargs="?", default=3, 
 parser.add_argument('input', metavar='input', type=str, nargs="?", default='Both', help='Type of input data')
 parser.add_argument('opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
 parser.add_argument('fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
-parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=20, help='Number of batch by epoch')
+parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=3, help='Number of batch by epoch')
 parser.add_argument('job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
-parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../../../Thèse_Rougé_Pierre/Data/', help='Data\'s directory')
+parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../data', help='Data\'s directory')
 parser.add_argument('--features', nargs='+', type=int, default=[2, 2, 2, 2, 2, 2], help='Number of features for each layer in the decoder')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
 parser.add_argument('--entity', metavar='entity', type=str, default='pierre-rouge', help='Entity for W&B')
@@ -83,14 +82,6 @@ while dir_exist != 1:
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
-        
-
-res_seg = res + "/seg"
-res_proba = res + "/proba"
-if not os.path.exists(res_seg):
-    os.makedirs(res_seg)
-if not os.path.exists(res_proba):
-    os.makedirs(res_proba)
            
 # Set variables for parameteres
 batch_size = args.batch_size
@@ -145,17 +136,15 @@ else:
 # %% Data splitting
 
 # Select data's directories
-dir_inputs = dir_data + 'Bullit/raw/Images'
-dir_GT = dir_data + 'Bullit/raw/skeleton'
+dir_inputs = os.path.join(dir_data, 'Images')
+dir_GT = os.path.join(dir_data, 'Skeletons')
 
 # Segmentation as input to perform skeletonization
-dir_inputs_seg = dir_data + 'Bullit/raw/GT'
-dir_raw = dir_data + 'Bullit/raw/Images'
-
+dir_inputs_seg = os.path.join(dir_data, 'GT')
 
 # Separate patients for training, validation and test
 patient = []
-for (root, directory, file) in os.walk(dir_raw):
+for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
         patient.append(split[0])
@@ -233,10 +222,10 @@ elif input_ == 'segmentation':
      transform_augmentation = [RandRotated(keys, prob=prob, range_x=range_rotation, range_y=range_rotation, range_z=range_rotation), 
                               RandZoomd(keys, prob=prob, min_zoom=0.7, max_zoom=1.4),  RandAxisFlipd(keys, prob=prob)]
    
-transform_train = transforms.Compose(transform_io + transform_augmentation)
+transform_train = Compose(transform_io + transform_augmentation)
 
 
-transform = transforms.Compose(transform_io)
+transform = Compose(transform_io)
 
 
 # Create dataset and dataloader~

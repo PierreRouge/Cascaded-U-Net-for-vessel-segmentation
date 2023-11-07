@@ -52,15 +52,15 @@ parser.add_argument('fold', metavar='fold', type=int, nargs="?", default=0, help
 parser.add_argument('lambda1', metavar='lambda1', type=float, nargs="?", default=1.0, help='Weight of segmentation loss')
 parser.add_argument('lambda2', metavar='lambda2', type=float, nargs="?", default=1.0, help='Weight of centerline loss')
 parser.add_argument('lambda3', metavar='lambda3', type=float, nargs="?", default=0.5, help='Weight of clDice loss')
-parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=20, help='Number of batch by epoch')
+parser.add_argument('nbr_batch_epoch', nargs='?', type=int, default=3, help='Number of batch by epoch')
 parser.add_argument('job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
-parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../../../Thèse_Rougé_Pierre/Data/', help='Data\'s directory')
+parser.add_argument('dir_data', metavar='dir_data', type=str, nargs="?", default='../data/', help='Data\'s directory')
 parser.add_argument('dir_weights_segmentation', metavar='dir_data', type=str, nargs="?", default='../pretrained_weights/segmentation/', help='Weight\'s directory')
 parser.add_argument('dir_weights_skeletonization', metavar='dir_data', type=str, nargs="?", default='../pretrained_weights/skeletonization/', help='Weight\'s directory')
 parser.add_argument("--pretrained", help="Use pretrained version", action="store_true")
 parser.add_argument("--freeze_skeleton", help="Freeze network for skeletization", action="store_true")
 parser.add_argument('--features', nargs='+', type=int, default=[2, 4, 4, 4, 4, 4], help='Number of features for each layer in the decoder')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
 parser.add_argument('--entity', metavar='entity', type=str, default='', help='Entity for W&B')
@@ -93,13 +93,6 @@ while dir_exist != 1:
         os.makedirs(res)
         dir_exist = 1
         
-res_seg = res + "/seg"
-res_skel = res + "/skel"
-if not os.path.exists(res_seg):
-    os.makedirs(res_seg)
-if not os.path.exists(res_skel):
-    os.makedirs(res_skel)
-    
 # %% Set parameters for training
 
 # Set variables for parameteres
@@ -164,9 +157,9 @@ else:
 # %% Data splitting
 
 # Select data's directories
-dir_inputs = dir_data + 'Bullit/raw/Images'
-dir_GT = dir_data + 'Bullit/raw/GT'
-dir_skel = dir_data + 'Bullit/raw/skeleton'
+dir_inputs = os.path.join(dir_data, 'Images')
+dir_GT = os.path.join(dir_data, 'GT')
+dir_skel = dir_data + os.path.join(dir_data, 'Skeletons')
     
 patient = []
 for (root, directory, file) in os.walk(dir_inputs):
