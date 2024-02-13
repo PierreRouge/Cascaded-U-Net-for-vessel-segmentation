@@ -55,7 +55,7 @@ parser.add_argument('--nbr_batch_epoch', nargs='?', type=int, default=3, help='N
 parser.add_argument('--job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='../data', help='Data directory')
 parser.add_argument('--features', nargs='+', type=int, default=[2, 2, 2, 2, 2, 2], help='Number of features for each layer in the decoder')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[96, 96, 96], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
 parser.add_argument('--entity', metavar='entity', type=str, default='', help='Entity for W&B')
