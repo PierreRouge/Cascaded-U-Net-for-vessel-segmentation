@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 
 from utils.utils_pytorch import dice_metric_pytorch, cl_dice_loss, dice_loss_pytorch, sigmoid_clip, cl_dice_loss_new_skeletonization, get_lr
 from utils.utils_multitask import loss_dice_multitask, loss_CE_multitask, loss_dice_CE_multitask, loss_dice_cldice_multitask
+from utils.utils_losses import msloss, fvloss
 
 if torch.cuda.is_available():
     dev = "cuda:0"
@@ -411,6 +412,108 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
         print(f"loss: {train_loss:>7f}, dice_loss: {train_dice_loss:>7f}, train_cldice_loss: {train_loss:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, dice:{dice:>7f}, time:{epoch_duration:>7f}")
          
         return logs
+    
+    if loss_param == 'tsloss':
+        loss_1 = dice_loss_pytorch
+        loss_2 = nn.BCELoss()
+        
+        # weigth morphological loss
+        wms = 0.05
+        
+        model.eval()
+        val_loss_0 = 0.0
+        val_dice_0 = 0.0
+        with torch.no_grad():
+            for batch, data in enumerate(validloader):
+                if input_ == 'MRI':
+                    X_val = data['image']
+                elif input_ == 'segmentation':
+                    X_val = data['segmentation']
+                elif input_ == 'Both':
+                    X_val_1 = data['image']
+                    X_val_2 = data['segmentation']
+                    X_val = torch.cat((X_val_1, X_val_2), dim=1)
+                
+                y_val = data['GT']
+                
+                X_val = X_val.float()
+                X_val = X_val.to(device)
+                y_val = y_val.float()
+                y_val = y_val.to(device)
+                
+                pred_val = model(X_val)
+                pred_val = sigmoid(pred_val)
+    
+                val_loss = loss_1(pred_val, y_val) + loss_2(pred_val, y_val)
+                val_loss = val_loss.item()
+                val_loss_0 += val_loss
+                pred_val = nn.functional.threshold(pred_val, threshold=0.5, value=0)
+                ones = torch.ones(pred_val.shape, dtype=torch.float, device=device)
+                pred_val = torch.where(pred_val > 0, ones, pred_val)
+                dice_val = dice_metric_pytorch(pred_val, y_val)
+                dice_val = torch.mean(dice_val)
+                val_dice_0 += dice_val.item()
+                
+            val_loss = val_loss_0 / len(validloader)
+            val_dice = val_dice_0 / len(validloader)
+            
+        loss_Dice = 0.0
+        loss_BCE = 0.0
+        train_loss = 0.0
+        start = time.time()
+        for batch_train, data in enumerate(dataloader):
+            if input_ == 'MRI':
+                X = data['image']
+            elif input_ == 'segmentation':
+                X = data['segmentation']
+            elif input_ == 'Both':
+                X_1 = data['image']
+                X_2 = data['segmentation']
+                X = torch.cat((X_1, X_2), dim=1)
+            y = data['GT']
+        
+            # Compute prediction and loss
+            X = X.float()
+            X = X.to(device)
+            y = y.float()
+            y = y.to(device)
+            
+            pred = model(X)
+            pred = sigmoid(pred)
+
+           
+            loss_dice = loss_1(pred, y) 
+            loss_bce = loss_2(pred, y)
+            loss_frangi = fvloss([pred], y)
+            loss_morpho = msloss([pred], y)
+            
+            loss = loss_dice + loss_bce + loss_frangi + wms * loss_morpho
+            
+            train_loss += loss_dice.item() + loss_bce.item() + loss_frangi.item() + wms * loss_morpho.item()
+
+            # Backpropagation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+         
+        train_loss = train_loss / len(dataloader)
+        end = time.time()
+        epoch_duration = end - start 
+        
+        print(f"loss: {train_loss:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, time:{epoch_duration:>7f}")
+        
+        logs = {"train_loss": train_loss,
+                "loss_dice": loss_dice.item(),
+                "loss_bce": loss_bce.item(),
+                "loss_frangi": loss_frangi.item(),
+                "loss_morpho":  loss_morpho.item(),
+                "val_loss": val_loss,
+                "val_dice": val_dice,
+                "epoch_duration": epoch_duration
+            }
+        
+        return logs
+        
    
     
 # Training function for U-Net with Boolean and Euler skeletonization
