@@ -231,7 +231,7 @@ def frangi(eigenvalues, alpha=0.1, beta=0.1, gamma=2):
 
 # Losses
 
-def msloss(output,target, sigma=25, gt=True):
+def msloss(output,target, sigma=15, gt=True):
     '''
     Loss function to check the morphology of the structures, named morphological similarity loss function and denoted by MsLoss,
     by comparing the eigenvalues ordered by the eigenvectors matrix as presented in the article/thesis
@@ -311,7 +311,7 @@ def msloss(output,target, sigma=25, gt=True):
     # remove the multiplicative factor (1/(channel_dim -1))
     return loss_vessel
 
-def fvloss(output,target,sigma=25, alpha=0.1,beta=0.1,gamma=2):
+def fvloss(output,target,sigma=15, alpha=0.1,beta=0.1,gamma=2):
     '''
     Loss function to force prediction of elongated structures as in Frangi’s vesselness function,
     and thus named Frangi’s vesselness loss function FvLoss.
