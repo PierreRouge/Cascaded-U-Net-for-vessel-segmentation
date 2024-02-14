@@ -161,3 +161,40 @@ class My_Unet_tiny(nn.Module):
         x_final = self.final_conv_1(x7)
             
         return x_final
+    
+    
+# U-Net for Deep Distance Transform
+
+class DeepDistanceUnet(nn.Module):
+    def __init__(self, dim, in_channel, features, strides, kernel_size, K=5):
+        super(DeepDistanceUnet, self).__init__()
+        
+        self.conv1 = DoubleConv(dim, in_channel, features[0], strides[0], kernel_size[0])
+        self.conv2 = DoubleConv(dim, features[0], features[1], strides[1], kernel_size[1])
+        self.conv3 = DoubleConv(dim, features[1], features[2], strides[2], kernel_size[2])
+        self.conv4 = DoubleConv(dim, features[2], features[3], strides[3], kernel_size[3])
+        
+        self.up_1 = Conv_Up(dim, features[3], features[2], strides[3], kernel_size[3])
+        self.up_2 = Conv_Up(dim, features[2], features[1], strides[2], kernel_size[2])
+        self.up_3 = Conv_Up(dim, features[1], features[0], strides[1], kernel_size[1])
+
+        # Segmentation Head
+        self.final_conv_1 = Conv["conv", dim](features[0], 1, kernel_size=1)
+        # Distance Map Head (Quantized)
+        self.final_conv_2 = Conv["conv", dim](features[0], K, kernel_size=1)
+        
+    def forward(self, x: torch.Tensor):
+            
+        x1 = self.conv1(x)
+        x2 = self.conv2(x1)
+        x3 = self.conv3(x2)
+        x4 = self.conv4(x3)
+
+        x5 = self.up_1(x4, x3)
+        x6 = self.up_2(x5, x2)
+        x7 = self.up_3(x6, x1)
+
+        x_final_seg = self.final_conv_1(x7)
+        x_final_dtm = self.final_conv_2(x7)
+            
+        return x_final_seg, x_final_dtm
