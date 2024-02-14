@@ -296,6 +296,10 @@ epoch_save = 1
 logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=1, max_epoch=epochs)
 
 loss = logs['train_loss']
+loss_dice = logs['loss_dice']
+loss_bce = logs['loss_bce']
+loss_frangi = logs['loss_frangi']
+loss_morpho = logs['loss_morpho']
 val_loss = logs['val_loss']
 val_dice = logs['val_dice']
 epoch_duration = logs['epoch_duration']
@@ -307,7 +311,7 @@ val_history.append(val_loss)
 val_dice_history.append(val_dice)
 
 file_training = open(res + "/training.txt", "a")
-file_training.write("loss:" + str(loss) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
+file_training.write("loss:" + str(loss) + "loss_dice:" + str(loss_dice) + "loss_bce:" + str(loss_bce) + "loss_frangi:" + str(loss_frangi) + "loss_morpho:" + str(loss_morpho) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
 file_training.close()
 
 if sch is not None:
@@ -335,6 +339,10 @@ for t in range(1, epochs):
     logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs)
     
     loss = logs['train_loss']
+    loss_dice = logs['loss_dice']
+    loss_bce = logs['loss_bce']
+    loss_frangi = logs['loss_frangi']
+    loss_morpho = logs['loss_morpho']
     val_loss = logs['val_loss']
     val_dice = logs['val_dice']
     epoch_duration = logs['epoch_duration']
@@ -344,7 +352,7 @@ for t in range(1, epochs):
     val_dice_history.append(val_dice)
 
     file_training = open(res + "/training.txt", "a")
-    file_training.write("loss:" + str(loss) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
+    file_training.write("loss:" + str(loss) + "loss_dice:" + str(loss_dice) + "loss_bce:" + str(loss_bce) + "loss_frangi:" + str(loss_frangi) + "loss_morpho:" + str(loss_morpho) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
     file_training.close()
     
     if sch is not None:
