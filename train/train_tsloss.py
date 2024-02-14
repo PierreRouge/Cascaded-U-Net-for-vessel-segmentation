@@ -69,7 +69,7 @@ device = torch.device(dev)
 
 
 # Save parameters for training and ceate res directories
-dir_res = '../res/cascaded_unet'
+dir_res = '../res/tsloss'
 if not os.path.exists(dir_res + '/unet_tsloss'):
     os.makedirs(dir_res + '/unet_tsloss')
 num = 0
