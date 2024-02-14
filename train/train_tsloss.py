@@ -311,7 +311,7 @@ val_history.append(val_loss)
 val_dice_history.append(val_dice)
 
 file_training = open(res + "/training.txt", "a")
-file_training.write("loss:" + str(loss) + "loss_dice:" + str(loss_dice) + "loss_bce:" + str(loss_bce) + "loss_frangi:" + str(loss_frangi) + "loss_morpho:" + str(loss_morpho) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
+file_training.write("loss:" + str(loss) + ",loss_dice:" + str(loss_dice) + ",loss_bce:" + str(loss_bce) + ",loss_frangi:" + str(loss_frangi) + ",loss_morpho:" + str(loss_morpho) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
 file_training.close()
 
 if sch is not None:
@@ -352,7 +352,7 @@ for t in range(1, epochs):
     val_dice_history.append(val_dice)
 
     file_training = open(res + "/training.txt", "a")
-    file_training.write("loss:" + str(loss) + "loss_dice:" + str(loss_dice) + "loss_bce:" + str(loss_bce) + "loss_frangi:" + str(loss_frangi) + "loss_morpho:" + str(loss_morpho) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
+    file_training.write("loss:" + str(loss) + ",loss_dice:" + str(loss_dice) + ",loss_bce:" + str(loss_bce) + ",loss_frangi:" + str(loss_frangi) + ",loss_morpho:" + str(loss_morpho) + ',val_loss:' + str(val_loss) + ',val_dice:' + str(val_dice) + ',time:' + str(epoch_duration) + '\n')
     file_training.close()
     
     if sch is not None:
