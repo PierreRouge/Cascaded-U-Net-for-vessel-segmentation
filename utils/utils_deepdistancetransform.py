@@ -35,8 +35,9 @@ def distance_transform(binary_array):
     dtm = np.round(distance_transform_edt(binary_array))
     return dtm
     
+
 # Training
-def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, optimizer, device, epoch, max_epoch, alpha_=0.5):
+def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, optimizer, device, epoch, max_epoch):
 
     if loss_param == "deep-distance-transform":
         loss_0 = dice_loss_pytorch

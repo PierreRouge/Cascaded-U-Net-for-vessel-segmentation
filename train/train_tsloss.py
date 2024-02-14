@@ -34,8 +34,8 @@ from batchgenerators.transforms.spatial_transforms import SpatialTransform, Mirr
 import sys
 sys.path.append('..')
 from utils.utils_pytorch import get_lr
-from utils.utils_deepdistancetransform import train_loop_DeepDistance
-from network.unet import DeepDistanceUnet
+from utils.utils_training import train_loop
+from network.unet import My_Unet_tiny
 
 # This warning will be patch in new versions of monai
 warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is deprecated')
@@ -43,22 +43,21 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 # %% Define parameters for training
 
 # Parameters given by the user
-parser = argparse.ArgumentParser(description='Train Deep Distance Transfrom')
+parser = argparse.ArgumentParser(description='Train U-Net with Tsloss')
 parser.add_argument('--batch_size', metavar='batch_size', type=int, nargs="?", default=2, help='Batch size for training phase')
 parser.add_argument('--learning_rate', metavar='learning_rate', type=float, nargs="?", default=0.01, help='Learning rate for training phase')
-parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='deep-distance-transform', help='Choose loss function')
-parser.add_argument('--K', metavar='K', type=int, nargs="?", default=5, help='Weight for Dice loss in Dice + clDice loss')
+parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='Dice', help='Choose loss function')
 parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=3, help='Number of epochs for training phase')
 parser.add_argument('--opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
 parser.add_argument('--fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
 parser.add_argument('--nbr_batch_epoch', nargs='?', type=int, default=3, help='Number of batch by epoch')
 parser.add_argument('--job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
-parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='../data/', help='Data directory')
+parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='../data', help='Data directory')
 parser.add_argument('--features', nargs='+', type=int, default=[2, 2, 2, 2, 2, 2], help='Number of features for each layer in the decoder')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[96, 96, 96], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
-parser.add_argument('--entity', metavar='entity', type=str, default='pierre-rouge', help='Entity for W&B')
+parser.add_argument('--entity', metavar='entity', type=str, default='', help='Entity for W&B')
 args = parser.parse_args()
 
 # Check if GPU is available for training
@@ -70,20 +69,20 @@ device = torch.device(dev)
 
 
 # Save parameters for training and ceate res directories
-dir_res = '../res/deep_distance'
-if not os.path.exists(dir_res + '/unet'):
-    os.makedirs(dir_res + '/unet')
+dir_res = '../res/cascaded_unet'
+if not os.path.exists(dir_res + '/unet_tsloss'):
+    os.makedirs(dir_res + '/unet_tsloss')
 num = 0
-for f in os.listdir(dir_res + '/unet'):
+for f in os.listdir(dir_res + '/unet_tsloss'):
     num += 1
 num += 1
 
-res = dir_res + '/unet/' + 'training_n°' + str(num)
+res = dir_res + '/unet_tsloss/' + 'training_n°' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/unet/' + 'training_n°' + str(num)
+        res = dir_res + '/unet_tsloss/' + 'training_n°' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
@@ -172,14 +171,14 @@ for (root, directory, file) in os.walk(dir_inputs):
         split = f.split('-')
         name = f.split('.')[0]
         if split[0] in patient_train:
-            data_train.append(dict(zip(['image', 'GT', 'DTM'], [dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz', dir_GT.replace('GT', 'DistanceMap') + '/' + name + '_DistanceMap.nii.gz'])))
+            data_train.append(dict(zip(['image', 'GT'], [dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz'])))
             
 for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
         name = f.split('.')[0]
         if split[0] in patient_val:
-            data_val.append(dict(zip(['image', 'GT', 'DTM', 'filename'], [dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz', dir_GT.replace('GT', 'DistanceMap') + '/' + name + '_DistanceMap.nii.gz', f])))
+            data_val.append(dict(zip(['image', 'GT', 'filename'], [dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz', f])))
             
 
 # Save patient split in json file
@@ -193,8 +192,8 @@ with open(res + '/config_training.json', 'w') as outfile:
     json.dump(data, outfile)
     
 # Define transforms
-keys = ('image', 'GT', 'DTM')
-outputs = {'image': 'image', 'GT': 'GT', 'DTM': 'DTM'}
+keys = ('image', 'GT')
+outputs = {'image': 'image', 'GT': 'GT'}
 range_rotation = (-0.523, 0.523)
 prob = 0.2
 
@@ -256,7 +255,7 @@ val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, n
 kernel_size = (3, 3, 3, 3)
 strides = (1, 2, 2, 2)
 features = features[:4]
-model = DeepDistanceUnet(dim=3, in_channel=1, features=features, strides=strides, kernel_size=kernel_size, K=args.K)
+model = My_Unet_tiny(dim=3, in_channel=1, features=features, strides=strides, kernel_size=kernel_size)
     
 sigmoid = nn.Sigmoid()
 model = model.float()
@@ -294,7 +293,7 @@ val_dice_history = []
 
 print(f"Epoch {1}\n-------------------------------")
 epoch_save = 1
-logs = train_loop_DeepDistance(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=1, max_epoch=epochs)
+logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=1, max_epoch=epochs)
 
 loss = logs['train_loss']
 val_loss = logs['val_loss']
@@ -333,7 +332,7 @@ for t in range(1, epochs):
     train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4)
     val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, num_workers=4)
 
-    logs = train_loop_DeepDistance(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs)
+    logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs)
     
     loss = logs['train_loss']
     val_loss = logs['val_loss']
