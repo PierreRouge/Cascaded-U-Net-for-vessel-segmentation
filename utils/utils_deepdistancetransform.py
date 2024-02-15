@@ -71,6 +71,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
                 pred_val_seg = sigmoid(pred_val_seg)
                 # pred_val_dtm = softmax(pred_val_dtm)
     
+                print(y_val_dtm.view(b, s1, s2, s3).long().unique())
                 val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm.view(b, s1, s2, s3).long())
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
@@ -88,6 +89,9 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             val_dice = val_dice_0 / len(validloader)
             
         train_loss = 0.0
+        train_loss_dice = 0.0
+        train_loss_bce = 0.0
+        train_loss_dtm = 0.0
         start = time.time()
         for batch_train, data in enumerate(dataloader):
             if input_ == 'MRI':
@@ -118,6 +122,9 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             loss_dtm = loss_ce_dtm(pred_dtm, y_dtm.view(b, s1, s2, s3).long())
             loss = loss_dice + loss_bce + loss_dtm
             train_loss += loss.item()
+            train_loss_dice += loss_dice.item()
+            train_loss_bce += loss_bce.item()
+            train_loss_dtm += loss_dtm.item()
 
             pred_seg = nn.functional.threshold(pred_seg, threshold=0.5, value=0)
             ones = torch.ones(pred_seg.shape, dtype=torch.float)
@@ -133,13 +140,16 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             optimizer.step()
             
         train_loss = train_loss / len(dataloader)
+        train_loss_dice = train_loss_dice / len(dataloader)
+        train_loss_bce = train_loss_bce / len(dataloader)
+        train_loss_dtm = train_loss_dtm / len(dataloader)
         end = time.time()
         epoch_duration = end - start
        
         logs = {"train_loss": train_loss,
-                "loss_dice": loss_dice.item(),
-                "loss_bce": loss_bce.item(),
-                "loss_dtm": loss_dtm.item(),
+                "loss_dice": train_loss_dice,
+                "loss_bce": train_loss_bce,
+                "loss_dtm": train_loss_dtm,
                 "val_loss": val_loss,
                 "val_dice": val_dice,
                 "epoch_duration": epoch_duration}
@@ -161,3 +171,4 @@ if __name__ == '__main__':
         dtm_nii = nib.Nifti1Image(dtm, affine=image.affine, header=image.header)
         
         nib.save(dtm_nii, f.replace('GT', 'DistanceMap'))
+        print(np.unique(dtm))
