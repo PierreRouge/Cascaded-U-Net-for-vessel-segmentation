@@ -83,6 +83,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 X = torch.cat((X_1, X_2), dim=1)
             
             y = data['GT']
+            y = y.to(device)
             
             # Compute prediction and loss
             X = X.float()
@@ -90,7 +91,6 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             pred = model(X)
             pred = sigmoid(pred)
 
-            y = y.to(device)
             loss = loss_0(pred, y)
             train_loss += loss.item()
 
