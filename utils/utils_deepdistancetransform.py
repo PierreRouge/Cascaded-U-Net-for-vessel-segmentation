@@ -120,7 +120,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             loss_dice = loss_0(pred_seg, y_seg)
             loss_bce = loss_1(pred_seg, y_seg)  
             loss_dtm = loss_ce_dtm(pred_dtm, y_dtm.view(b, s1, s2, s3).long())
-            loss = loss_dice + loss_bce + loss_dtm
+            loss = 0.8*(loss_dice + loss_bce) + 0.2*loss_dtm
             train_loss += loss.item()
             train_loss_dice += loss_dice.item()
             train_loss_bce += loss_bce.item()
