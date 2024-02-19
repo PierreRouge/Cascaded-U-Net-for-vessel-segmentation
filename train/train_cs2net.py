@@ -67,8 +67,6 @@ else:
     dev = "cpu"
 device = torch.device(dev)
 
-torch.autograd.set_detect_anomaly(True)
-
 
 # Save parameters for training and ceate res directories
 dir_res = '../res/cs2net'
