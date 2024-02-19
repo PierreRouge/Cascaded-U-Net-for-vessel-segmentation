@@ -149,9 +149,20 @@ class AffinityAttention3d(nn.Module):
         :param x: input tensor
         :return: sab + cab
         """
+        print("Is nan x")
+        print(torch.any(torch.isnan(x)))
         sab = self.sab(x)
+        print("Is nan sab")
+        print(torch.any(torch.isnan(sab)))
+        
         cab = self.cab(x)
+        print("Is nan cab")
+        print(torch.any(torch.isnan(cab)))
+        
         out = sab + cab + x
+        
+        print("Is nan out")
+        print(torch.any(torch.isnan(out)))
         return out
 
 
