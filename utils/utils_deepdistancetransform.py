@@ -76,10 +76,10 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
                 
-                pred_val = nn.functional.threshold(pred_val_seg, threshold=0.5, value=0)
-                ones = torch.ones(pred_val.shape, dtype=torch.float)
+                pred_val_seg = nn.functional.threshold(pred_val_seg, threshold=0.5, value=0)
+                ones = torch.ones(pred_val_seg.shape, dtype=torch.float)
                 ones = ones.to(device)
-                pred_val_seg = torch.where(pred_val_seg > 0, ones, pred_val)
+                pred_val_seg = torch.where(pred_val_seg > 0, ones, pred_val_seg)
                 dice_val = dice_metric_pytorch(pred_val_seg, y_val_seg)
                 dice_val = dice_val.cpu().detach().numpy()
                 dice_val = np.mean(dice_val)
