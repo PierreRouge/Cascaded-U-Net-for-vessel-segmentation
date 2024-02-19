@@ -43,11 +43,23 @@ class ResEncoder3d(nn.Module):
         self.conv1x1 = nn.Conv3d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
+        print("Is nan x")
+        print(torch.any(torch.isnan(x)))
         residual = self.conv1x1(x)
+        print("Is nan residual")
+        print(torch.any(torch.isnan(residual)))
         out = self.relu(self.bn1(self.conv1(x)))
+        print("Is nan out")
+        print(torch.any(torch.isnan(out)))
         out = self.relu(self.bn2(self.conv2(out)))
+        print("Is nan out")
+        print(torch.any(torch.isnan(out)))
         out = out + residual
+        print("Is nan out")
+        print(torch.any(torch.isnan(out)))
         out = self.relu(out)
+        print("Is nan out")
+        print(torch.any(torch.isnan(out)))
         return out
 
 
