@@ -83,9 +83,21 @@ class Decoder3d(nn.Module):
 class SpatialAttentionBlock3d(nn.Module):
     def __init__(self, in_channels):
         super(SpatialAttentionBlock3d, self).__init__()
-        self.query = nn.Conv3d(in_channels, in_channels // 8, kernel_size=(1, 3, 1), padding=(0, 1, 0))
-        self.key = nn.Conv3d(in_channels, in_channels // 8, kernel_size=(3, 1, 1), padding=(1, 0, 0))
-        self.judge = nn.Conv3d(in_channels, in_channels // 8, kernel_size=(1, 1, 3), padding=(0, 0, 1))
+        self.query = nn.Sequential(
+            nn.Conv3d(in_channels, in_channels // 8, kernel_size=(1, 3, 1), padding=(0, 1, 0)),
+            nn.BatchNorm3d(in_channels // 8),
+            nn.ReLU(inplace=False)
+        )
+        self.key = nn.Sequential(
+            nn.Conv3d(in_channels, in_channels // 8, kernel_size=(3, 1, 1), padding=(1, 0, 0)),
+            nn.BatchNorm3d(in_channels // 8),
+            nn.ReLU(inplace=False)
+        )
+        self.judge = nn.Sequential(
+            nn.Conv3d(in_channels, in_channels // 8, kernel_size=(1, 1, 3), padding=(0, 0, 1)),
+            nn.BatchNorm3d(in_channels // 8),
+            nn.ReLU(inplace=False)
+        )
         self.value = nn.Conv3d(in_channels, in_channels, kernel_size=1)
         self.gamma = nn.Parameter(torch.zeros(1))
         self.softmax = nn.Softmax(dim=-1)
