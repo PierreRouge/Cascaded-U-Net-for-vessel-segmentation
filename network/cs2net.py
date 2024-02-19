@@ -112,6 +112,8 @@ class SpatialAttentionBlock3d(nn.Module):
         W: width
         D: slice number (depth)
         """
+        print('max')
+        print(torch.max(x))
         B, C, H, W, D = x.size()
         # compress x: [B,C,H,W,Z]-->[B,H*W*Z,C], make a matrix transpose
         proj_query = self.query(x).view(B, -1, W * H * D).permute(0, 2, 1)  # -> [B,W*H*D,C]
