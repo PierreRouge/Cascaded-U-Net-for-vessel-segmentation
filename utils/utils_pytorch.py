@@ -212,4 +212,8 @@ def dice_loss_pytorch(y_pred, y_true):
     epsilon = 1e-5
     intersection = torch.sum(y_pred * y_true, dim=list(range(1, y_pred.dim())))
     union = torch.sum(y_pred, dim=list(range(1, y_pred.dim()))) + torch.sum(y_true, dim=list(range(1, y_true.dim())))
+    print('intersection')
+    print(intersection)
+    print('union')
+    print(union)
     return torch.mean(1.0 - (2. * intersection + epsilon) / (union + epsilon))
