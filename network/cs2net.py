@@ -109,7 +109,11 @@ class SpatialAttentionBlock3d(nn.Module):
         affinity1 = torch.matmul(proj_query, proj_key)
         affinity2 = torch.matmul(proj_judge, proj_key)
         affinity = torch.matmul(affinity1, affinity2)
+        print("Is nan affinity 1")
+        print(torch.any(torch.isnan(affinity)))
         affinity = self.softmax(affinity)
+        print("Is nan affinity 2")
+        print(torch.any(torch.isnan(affinity)))
 
         proj_value = self.value(x).view(B, -1, H * W * D)  # -> C*N
         weights = torch.matmul(proj_value, affinity)
