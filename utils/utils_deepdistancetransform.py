@@ -70,8 +70,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
                 pred_val_seg, pred_val_dtm = model(X_val)
                 pred_val_seg = sigmoid(pred_val_seg)
                 # pred_val_dtm = softmax(pred_val_dtm)
-    
-                print(y_val_dtm.view(b, s1, s2, s3).long().unique())
+  
                 val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm.view(b, s1, s2, s3).long())
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
@@ -118,9 +117,9 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             pred_seg = sigmoid(pred_seg)
 
             loss_dice = loss_0(pred_seg, y_seg)
-            loss_bce = loss_1(pred_seg, y_seg)  
+            loss_bce = loss_1(pred_seg, y_seg)
             loss_dtm = loss_ce_dtm(pred_dtm, y_dtm.view(b, s1, s2, s3).long())
-            loss = 0.8*(loss_dice + loss_bce) + 0.0*loss_dtm
+            loss = 0.5 * (loss_dice + loss_bce) + 0.5 * loss_dtm
             train_loss += loss.item()
             train_loss_dice += loss_dice.item()
             train_loss_bce += loss_bce.item()
@@ -129,7 +128,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             pred_seg = nn.functional.threshold(pred_seg, threshold=0.5, value=0)
             ones = torch.ones(pred_seg.shape, dtype=torch.float)
             ones = ones.to(device)
-            pred = torch.where(pred_seg > 0, ones, pred_seg)
+            pred_seg = torch.where(pred_seg > 0, ones, pred_seg)
             dice = dice_metric_pytorch(pred_seg, y_seg)
             dice = dice.cpu().detach().numpy()
             dice = np.mean(dice)
