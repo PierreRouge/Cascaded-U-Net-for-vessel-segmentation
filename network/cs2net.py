@@ -105,9 +105,20 @@ class SpatialAttentionBlock3d(nn.Module):
         proj_query = self.query(x).view(B, -1, W * H * D).permute(0, 2, 1)  # -> [B,W*H*D,C]
         proj_key = self.key(x).view(B, -1, W * H * D)  # -> [B,H*W*D,C]
         proj_judge = self.judge(x).view(B, -1, W * H * D).permute(0, 2, 1)  # -> [B,C,H*W*D]
-
+        
+        print('max')
+        print(torch.max(proj_query))
+        print('max')
+        print(torch.max(proj_key))
+        print('max')
+        print(torch.max(proj_judge))
+        
         affinity1 = torch.matmul(proj_query, proj_key)
+        print('max')
+        print(torch.max(affinity1))
         affinity2 = torch.matmul(proj_judge, proj_key)
+        print('max')
+        print(torch.max(affinity2))
         affinity = torch.matmul(affinity1, affinity2)
         print("Is nan affinity 1")
         print(torch.any(torch.isnan(affinity)))
@@ -148,7 +159,7 @@ class ChannelAttentionBlock3d(nn.Module):
         print("Is nan affinity_new 1")
         print(torch.any(torch.isnan(affinity_new)))
         affinity_new = self.softmax(affinity_new)
-        print("Is nan affinity_new 1")
+        print("Is nan affinity_new 2")
         print(torch.any(torch.isnan(affinity_new)))
         proj_value = x.view(B, C, -1)
         weights = torch.matmul(affinity_new, proj_value)
