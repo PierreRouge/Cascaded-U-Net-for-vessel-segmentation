@@ -46,15 +46,15 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 parser = argparse.ArgumentParser(description='CS2Net for vascular network segmentation')
 parser.add_argument('--batch_size', metavar='batch_size', type=int, nargs="?", default=2, help='Batch size for training phase')
 parser.add_argument('--learning_rate', metavar='learning_rate', type=float, nargs="?", default=0.01, help='Learning rate for training phase')
-parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='Dice', help='Choose loss function')
+parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='BCE', help='Choose loss function')
 parser.add_argument('--alpha', metavar='alpha', type=float, nargs="?", default=0.5, help='Weight for Dice loss in Dice + clDice loss')
-parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=3, help='Number of epochs for training phase')
+parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=50, help='Number of epochs for training phase')
 parser.add_argument('--opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
 parser.add_argument('--fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
-parser.add_argument('--nbr_batch_epoch', nargs='?', type=int, default=3, help='Number of batch by epoch')
+parser.add_argument('--nbr_batch_epoch', nargs='?', type=int, default=50, help='Number of batch by epoch')
 parser.add_argument('--job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='../data', help='Data directory')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[96, 96, 96], help='Patch _size')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
 parser.add_argument('--entity', metavar='entity', type=str, default='pierre-rouge', help='Entity for W&B')
@@ -169,7 +169,7 @@ data_train = []
 data_val = []
 data_test = []
 for (root, directory, file) in os.walk(dir_inputs):
-    for f in file:
+    for f in file[:5]:
         split = f.split('-')
         name = f.split('.')[0]
         if split[0] in patient_train:

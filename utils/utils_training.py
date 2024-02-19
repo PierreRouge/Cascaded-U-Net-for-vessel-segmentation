@@ -90,6 +90,8 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             X = X.to(device)
             pred = model(X)
             pred = sigmoid(pred)
+            print("Is nan")
+            print(torch.any(torch.isnan(pred)))
 
             loss = loss_0(pred, y)
             train_loss += loss.item()
@@ -179,7 +181,9 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             X = X.float()
             X = X.to(device)
             pred = model(X)
+            print(pred.shape)
             pred = sigmoid(pred)
+            print(pred.shape)
 
             y = y.to(device)
             loss = loss_0(pred, y)
@@ -252,8 +256,8 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             val_loss = val_loss_0 / len(validloader)
             val_dice = val_dice_0 / len(validloader)
             
-        loss_Dice = 0.0
-        loss_BCE = 0.0
+        loss_dice = 0.0
+        loss_bce = 0.0
         train_loss = 0.0
         start = time.time()
         for batch_train, data in enumerate(dataloader):
@@ -274,11 +278,17 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             y = y.to(device)
             
             pred = model(X)
+            print(pred.shape)
             pred = sigmoid(pred)
-
+            print(pred.shape)
+            print(pred)
            
-            loss = loss_1(pred, y) + loss_2(pred, y)
+            l_dice = loss_1(pred, y)
+            l_bce = loss_2(pred, y)
+            loss = l_dice # + l_bce
             train_loss += loss.item()
+            loss_dice += l_dice.item()
+            loss_bce += l_bce.item()
 
             # Backpropagation
             optimizer.zero_grad()
@@ -286,12 +296,17 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             optimizer.step()
          
         train_loss = train_loss / len(dataloader)
+        loss_dice = loss_dice / len(dataloader)
+        loss_bce = loss_bce / len(dataloader)
         end = time.time()
         epoch_duration = end - start 
         
         print(f"loss: {train_loss:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, time:{epoch_duration:>7f}")
-        
+        print(loss_dice)
+        print(loss_bce)
         logs = {"train_loss": train_loss,
+                "loss_dice": loss_dice,
+                "loss_bce": loss_bce,
                 "val_loss": val_loss,
                 "val_dice": val_dice,
                 "epoch_duration": epoch_duration
