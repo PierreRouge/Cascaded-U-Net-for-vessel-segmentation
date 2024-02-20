@@ -229,7 +229,7 @@ class CSNet3D(nn.Module):
         self.encoder4 = ResEncoder3d(128, 256)
         self.downsample = downsample()
         self.affinity_attention = AffinityAttention3d(256)
-        self.attention_fuse = nn.Conv3d(256 * 2, 256, kernel_size=1)
+        # self.attention_fuse = nn.Conv3d(256 * 2, 256, kernel_size=1)
         self.decoder4 = Decoder3d(256, 128)
         self.decoder3 = Decoder3d(128, 64)
         self.decoder2 = Decoder3d(64, 32)
@@ -239,7 +239,7 @@ class CSNet3D(nn.Module):
         self.deconv2 = deconv(64, 32)
         self.deconv1 = deconv(32, 16)
         self.final = nn.Conv3d(16, classes, kernel_size=1)
-        initialize_weights(self)
+        # initialize_weights(self)
 
     def forward(self, x):
         # print("Is nan x")
@@ -280,12 +280,12 @@ class CSNet3D(nn.Module):
         attention = self.affinity_attention(input_feature)
         # print("Is nan attention")
         # print(torch.any(torch.isnan(attention)))
-        attention_fuse = input_feature + attention
+        # attention_fuse = input_feature + attention
         # print("Is nan attention fuse")
         # print(torch.any(torch.isnan(attention_fuse)))
 
         # Do decoder operations here
-        up4 = self.deconv4(attention_fuse)
+        up4 = self.deconv4(attention)
         # print("Is nan up4")
         # print(torch.any(torch.isnan(up4)))
         up4 = torch.cat((enc3, up4), dim=1)

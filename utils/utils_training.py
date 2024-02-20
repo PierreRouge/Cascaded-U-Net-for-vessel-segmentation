@@ -104,7 +104,14 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             # Backpropagation
             optimizer.zero_grad()
             loss.backward()
+            total_norm = 0
+            for p in model.parameters():
+                    param_norm = p.grad.data.norm(2)
+                    total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** (1. / 2)
+            print(f"Total norm:{total_norm}")
             optimizer.step()
+            
             
         train_loss = train_loss / len(dataloader)
         end = time.time()
