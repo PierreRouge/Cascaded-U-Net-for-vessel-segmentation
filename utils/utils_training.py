@@ -90,12 +90,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             X = X.to(device)
             pred = model(X)
             pred = sigmoid(pred)
-            print("Is nan")
-            print(torch.any(torch.isnan(pred)))
-
             loss = loss_0(pred, y)
-            print('loss')
-            print(loss)
             train_loss += loss.item()
 
             pred = nn.functional.threshold(pred, threshold=0.5, value=0)

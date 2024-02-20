@@ -81,12 +81,12 @@ for f in os.listdir(dir_res + '/unet_segmentation_newskel'):
     num += 1
 num += 1
 
-res = dir_res + '/unet_segmentation_newskel/' + 'training_n°' + str(num)
+res = dir_res + '/unet_segmentation_newskel/' + args.job_name + '_' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/unet_segmentation_newskel/' + 'training_n°' + str(num)
+        res = dir_res + '/unet_segmentation_newskel/' + args.job_name + '_' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1

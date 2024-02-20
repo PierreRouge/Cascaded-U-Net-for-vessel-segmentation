@@ -46,7 +46,7 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 parser = argparse.ArgumentParser(description='CS2Net for vascular network segmentation')
 parser.add_argument('--batch_size', metavar='batch_size', type=int, nargs="?", default=2, help='Batch size for training phase')
 parser.add_argument('--learning_rate', metavar='learning_rate', type=float, nargs="?", default=0.01, help='Learning rate for training phase')
-parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='BCE', help='Choose loss function')
+parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='Dice', help='Choose loss function')
 parser.add_argument('--alpha', metavar='alpha', type=float, nargs="?", default=0.5, help='Weight for Dice loss in Dice + clDice loss')
 parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=50, help='Number of epochs for training phase')
 parser.add_argument('--opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
@@ -77,12 +77,12 @@ for f in os.listdir(dir_res + '/cs2net'):
     num += 1
 num += 1
 
-res = dir_res + '/cs2net/' + 'training_n°' + str(num)
+res = dir_res + '/cs2net/' + args.job_name + '_' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/cs2net/' + 'training_n°' + str(num)
+        res = dir_res + '/cs2net/' + args.job_name + '_' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
@@ -328,7 +328,12 @@ for t in range(1, epochs):
 
     train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4)
     val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, num_workers=4)
-
+    
+    l=[]
+    for param in model.parameters():
+       l.append(torch.sum(param.grad))
+    print('grad max')
+    print(np.max(l))
     logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs, alpha_=alpha)
     
     loss = logs['train_loss']
