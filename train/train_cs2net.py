@@ -329,11 +329,11 @@ for t in range(1, epochs):
     train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4)
     val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, num_workers=4)
     
-    l=[]
-    for param in model.parameters():
-       l.append(torch.sum(param.grad))
-    print('grad max')
-    print(np.max(l))
+    # l=[]
+    # for param in model.parameters():
+    #    l.append(torch.sum(param.grad))
+    # print('grad max')
+    # print(np.max(l))
     logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs, alpha_=alpha)
     
     loss = logs['train_loss']
