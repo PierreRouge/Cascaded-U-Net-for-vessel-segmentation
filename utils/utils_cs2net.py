@@ -107,6 +107,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
             # Backpropagation
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             total_norm = 0
             for p in model.parameters():
                     param_norm = p.grad.data.norm(2)
@@ -131,8 +132,9 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
     
     if loss_param == "BCE":
         
-        pos_weight = torch.ones(patch_size, device=device) * 100
-        loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        # pos_weight = torch.ones(patch_size, device=device) * 100
+        # loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        loss_0 = nn.BCEWithLogitsLoss()
         model.eval()
         val_loss_0 = 0.0
         val_dice_0 = 0.0
@@ -214,6 +216,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
             optimizer.zero_grad()
             loss.backward()
             
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             total_norm = 0
             for p in model.parameters():
                 param_norm = p.grad.data.norm(2)
@@ -238,8 +241,9 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
         
     if loss_param == "Both":
         loss_1 = dice_loss_pytorch
-        pos_weight = torch.ones(patch_size, device=device) * 100
-        loss_2 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        # pos_weight = torch.ones(patch_size, device=device) * 100
+        # loss_2 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        loss_2 = nn.BCEWithLogitsLoss()
         
         model.eval()
         val_loss_0 = 0.0
