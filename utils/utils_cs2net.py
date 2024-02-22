@@ -131,7 +131,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
     
     if loss_param == "BCE":
         
-        pos_weight = torch.ones(patch_size, device=device) * 100 
+        pos_weight = torch.ones(patch_size, device=device) * 100
         loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         model.eval()
         val_loss_0 = 0.0
@@ -170,10 +170,10 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
                 val_dice_0 += dice_val.item()
                 
                 # print(dice_val.item())
-                image = pred_val[0,0,:,:,32].detach().cpu().numpy()
-                plt.figure()
-                plt.imshow(image)
-                plt.show()
+                # image = pred_val[0,0,:,:,32].detach().cpu().numpy()
+                # plt.figure()
+                # plt.imshow(image)
+                # plt.show()
     
             val_loss = val_loss_0 / len(validloader)
             val_dice = val_dice_0 / len(validloader)
@@ -213,11 +213,18 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
             # Backpropagation
             optimizer.zero_grad()
             loss.backward()
+            
+            for p in model.parameters():
+                    param_norm = p.grad.data.norm(2)
+                    total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** (1. / 2)
+            print(f"Total norm:{total_norm}")
+            
             optimizer.step()
             
         train_loss = train_loss / len(dataloader)
         end = time.time()
-        epoch_duration = end - start 
+        epoch_duration = end - start
         
         logs = {"train_loss": train_loss,
                 "val_loss": val_loss,
@@ -230,7 +237,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
         
     if loss_param == "Both":
         loss_1 = dice_loss_pytorch
-        pos_weight = torch.ones(patch_size, device=device) * 100 
+        pos_weight = torch.ones(patch_size, device=device) * 100
         loss_2 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         
         model.eval()
@@ -306,6 +313,13 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
             # Backpropagation
             optimizer.zero_grad()
             loss.backward()
+            
+            for p in model.parameters():
+                param_norm = p.grad.data.norm(2)
+                total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** (1. / 2)
+            print(f"Total norm:{total_norm}")
+            
             optimizer.step()
          
         train_loss = train_loss / len(dataloader)
