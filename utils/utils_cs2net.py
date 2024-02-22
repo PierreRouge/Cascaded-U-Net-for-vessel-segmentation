@@ -28,7 +28,7 @@ sigmoid = sigmoid_clip(1E-3)
 
 
 # Training fonction for U-Net
-def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, device, epoch, max_epoch, alpha_=0.5):
+def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, optimizer, device, epoch, max_epoch, alpha_=0.5):
 
     if loss_param == "Dice":
         loss_0 = dice_loss_pytorch
@@ -131,7 +131,8 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
     
     if loss_param == "BCE":
         
-        loss_0 = nn.BCELoss()
+        pos_weight = torch.ones(patch_size) * 100 
+        loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         model.eval()
         val_loss_0 = 0.0
         val_dice_0 = 0.0
@@ -152,7 +153,6 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 X_val = X_val.to(device)
     
                 pred_val = model(X_val)
-                # print(pred_val)
     
                 y_val = y_val.to(device)
                 val_loss = loss_0(pred_val, y_val)
@@ -160,8 +160,6 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 val_loss_0 += val_loss
                 
                 pred_val = sigmoid(pred_val)
-                print('Maxxxx')
-                print(torch.max(pred_val))
                 pred_val = nn.functional.threshold(pred_val, threshold=0.5, value=0)
                 ones = torch.ones(pred_val.shape, dtype=torch.float)
                 ones = ones.to(device)
@@ -198,12 +196,12 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             X = X.float()
             X = X.to(device)
             pred = model(X)
-            pred = sigmoid(pred)
 
             y = y.to(device)
             loss = loss_0(pred, y)
             train_loss += loss.item()
 
+            pred = sigmoid(pred)
             pred = nn.functional.threshold(pred, threshold=0.5, value=0)
             ones = torch.ones(pred.shape, dtype=torch.float)
             ones = ones.to(device)
@@ -232,7 +230,8 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
         
     if loss_param == "Both":
         loss_1 = dice_loss_pytorch
-        loss_2 = nn.BCELoss()
+        pos_weight = torch.ones(patch_size) * 100 
+        loss_2 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         
         model.eval()
         val_loss_0 = 0.0
@@ -256,11 +255,12 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 y_val = y_val.to(device)
                 
                 pred_val = model(X_val)
-                pred_val = sigmoid(pred_val)
-    
-                val_loss = loss_1(pred_val, y_val) + loss_2(pred_val, y_val)
+        
+                val_loss = loss_1(sigmoid(pred_val), y_val) + loss_2(pred_val, y_val)
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
+                
+                pred_val = sigmoid(pred_val)
                 pred_val = nn.functional.threshold(pred_val, threshold=0.5, value=0)
                 ones = torch.ones(pred_val.shape, dtype=torch.float, device=device)
                 pred_val = torch.where(pred_val > 0, ones, pred_val)
@@ -293,14 +293,12 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             y = y.to(device)
             
             pred = model(X)
-            # print(pred.shape)
-            pred = sigmoid(pred)
-            # print(pred.shape)
-            # print(pred)
            
-            l_dice = loss_1(pred, y)
+            l_dice = loss_1(sigmoid(pred), y)
             l_bce = loss_2(pred, y)
-            loss = 0.8*l_dice + 0.2*l_bce
+            loss = 0.5 * l_dice + 0.5 * l_bce
+            
+            pred = sigmoid(pred)
             train_loss += loss.item()
             loss_dice += l_dice.item()
             loss_bce += l_bce.item()
@@ -314,7 +312,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
         loss_dice = loss_dice / len(dataloader)
         loss_bce = loss_bce / len(dataloader)
         end = time.time()
-        epoch_duration = end - start 
+        epoch_duration = end - start
         
         print(f"loss: {train_loss:>7f}, loss_dice: {loss_dice:>7f}, loss_bce: {loss_bce:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, time:{epoch_duration:>7f}")
         # print(loss_dice)
@@ -325,7 +323,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 "val_loss": val_loss,
                 "val_dice": val_dice,
                 "epoch_duration": epoch_duration
-            }
+                }
         
         return logs
                
@@ -543,4 +541,3 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             }
         
         return logs
-        
