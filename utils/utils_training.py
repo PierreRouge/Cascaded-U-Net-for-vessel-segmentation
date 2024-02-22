@@ -11,6 +11,7 @@ import torch
 from torch import nn
 import time
 import wandb
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, SubsetRandomSampler
 
 from utils.utils_pytorch import dice_metric_pytorch, cl_dice_loss, dice_loss_pytorch, sigmoid_clip, cl_dice_loss_new_skeletonization, get_lr
@@ -71,6 +72,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             val_dice = val_dice_0 / len(validloader)
             
         train_loss = 0.0
+        train_dice = 0.0
         start = time.time()
         for batch_train, data in enumerate(dataloader):
             if input_ == 'MRI':
@@ -100,6 +102,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             dice = dice_metric_pytorch(pred, y)
             dice = dice.cpu().detach().numpy()
             dice = np.mean(dice)
+            train_dice += dice.item()
 
             # Backpropagation
             optimizer.zero_grad()
@@ -111,9 +114,9 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             total_norm = total_norm ** (1. / 2)
             print(f"Total norm:{total_norm}")
             optimizer.step()
-            
-            
+              
         train_loss = train_loss / len(dataloader)
+        train_dice = train_dice / len(dataloader)
         end = time.time()
         epoch_duration = end - start
        
@@ -122,13 +125,14 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 "val_dice": val_dice,
                 "epoch_duration": epoch_duration}
         
-        print(f"loss: {train_loss:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, dice:{dice:>7f}, time:{epoch_duration:>7f}")
+        print(f"loss: {train_loss:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, dice_train:{train_dice:>7f}, time:{epoch_duration:>7f}")
         
         return logs
     
     if loss_param == "BCE":
-        loss_0 = nn.BCELoss()
         
+        pos_weights = torch.ones((64, 64, 64), device=device) * 200
+        loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
         model.eval()
         val_loss_0 = 0.0
         val_dice_0 = 0.0
@@ -149,12 +153,16 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 X_val = X_val.to(device)
     
                 pred_val = model(X_val)
-                pred_val = sigmoid(pred_val)
+                # print(pred_val)
     
                 y_val = y_val.to(device)
                 val_loss = loss_0(pred_val, y_val)
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
+                
+                pred_val = sigmoid(pred_val)
+                print('Maxxxx')
+                print(torch.max(pred_val))
                 pred_val = nn.functional.threshold(pred_val, threshold=0.5, value=0)
                 ones = torch.ones(pred_val.shape, dtype=torch.float)
                 ones = ones.to(device)
@@ -163,6 +171,12 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
                 dice_val = dice_val.cpu().detach().numpy()
                 dice_val = np.mean(dice_val)
                 val_dice_0 += dice_val.item()
+                
+                # print(dice_val.item())
+                image = pred_val[0,0,:,:,32].detach().cpu().numpy()
+                plt.figure()
+                plt.imshow(image)
+                plt.show()
     
             val_loss = val_loss_0 / len(validloader)
             val_dice = val_dice_0 / len(validloader)
@@ -185,9 +199,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             X = X.float()
             X = X.to(device)
             pred = model(X)
-            print(pred.shape)
             pred = sigmoid(pred)
-            print(pred.shape)
 
             y = y.to(device)
             loss = loss_0(pred, y)
@@ -282,14 +294,14 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
             y = y.to(device)
             
             pred = model(X)
-            print(pred.shape)
+            # print(pred.shape)
             pred = sigmoid(pred)
-            print(pred.shape)
-            print(pred)
+            # print(pred.shape)
+            # print(pred)
            
             l_dice = loss_1(pred, y)
             l_bce = loss_2(pred, y)
-            loss = l_dice # + l_bce
+            loss = l_dice + l_bce
             train_loss += loss.item()
             loss_dice += l_dice.item()
             loss_bce += l_bce.item()
@@ -305,9 +317,9 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
         end = time.time()
         epoch_duration = end - start 
         
-        print(f"loss: {train_loss:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, time:{epoch_duration:>7f}")
-        print(loss_dice)
-        print(loss_bce)
+        print(f"loss: {train_loss:>7f}, loss_dice: {loss_dice:>7f}, loss_bce: {loss_bce:>7f}, val_loss:{val_loss:>7f}, dice_val:{val_dice:>7f}, time:{epoch_duration:>7f}")
+        # print(loss_dice)
+        # print(loss_bce)
         logs = {"train_loss": train_loss,
                 "loss_dice": loss_dice,
                 "loss_bce": loss_bce,
