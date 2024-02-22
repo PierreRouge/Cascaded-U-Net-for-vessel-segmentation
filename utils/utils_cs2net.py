@@ -131,7 +131,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
     
     if loss_param == "BCE":
         
-        pos_weight = torch.ones(patch_size) * 100 
+        pos_weight = torch.ones(patch_size, device=device) * 100 
         loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         model.eval()
         val_loss_0 = 0.0
@@ -230,7 +230,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
         
     if loss_param == "Both":
         loss_1 = dice_loss_pytorch
-        pos_weight = torch.ones(patch_size) * 100 
+        pos_weight = torch.ones(patch_size, device=device) * 100 
         loss_2 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         
         model.eval()
