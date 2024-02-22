@@ -35,7 +35,7 @@ import sys
 sys.path.append('..')
 from utils.utils_pytorch import get_lr
 from utils.utils_training import train_loop
-from network.cs2net import CSNet3D
+from network.deepvesselnet import DeepVesselNet
 
 # This warning will be patch in new versions of monai
 warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is deprecated')
@@ -43,21 +43,22 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 # %% Define parameters for training
 
 # Parameters given by the user
-parser = argparse.ArgumentParser(description='CS2Net for vascular network segmentation')
+parser = argparse.ArgumentParser(description='DeepVesselNet for vascular network segmentation')
 parser.add_argument('--batch_size', metavar='batch_size', type=int, nargs="?", default=2, help='Batch size for training phase')
 parser.add_argument('--learning_rate', metavar='learning_rate', type=float, nargs="?", default=0.01, help='Learning rate for training phase')
 parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='Dice', help='Choose loss function')
 parser.add_argument('--alpha', metavar='alpha', type=float, nargs="?", default=0.5, help='Weight for Dice loss in Dice + clDice loss')
-parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=200, help='Number of epochs for training phase')
+parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=10, help='Number of epochs for training phase')
 parser.add_argument('--opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
 parser.add_argument('--fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
 parser.add_argument('--nbr_batch_epoch', nargs='?', type=int, default=50, help='Number of batch by epoch')
 parser.add_argument('--job_name', metavar='job_name', type=str, nargs="?", default='Local', help='Name of job on the cluster')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='../data', help='Data directory')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
+parser.add_argument('--features', nargs='+', type=int, default=[5, 10, 20, 50], help='Number of features for each layer in the decoder')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[32, 32, 32], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
-parser.add_argument('--entity', metavar='entity', type=str, default='pierre-rouge', help='Entity for W&B')
+parser.add_argument('--entity', metavar='entity', type=str, default='', help='Entity for W&B')
 args = parser.parse_args()
 
 # Check if GPU is available for training
@@ -69,20 +70,20 @@ device = torch.device(dev)
 
 
 # Save parameters for training and ceate res directories
-dir_res = '../res/cs2net'
-if not os.path.exists(dir_res + '/cs2net'):
-    os.makedirs(dir_res + '/cs2net')
+dir_res = '../res/deepvesselnet'
+if not os.path.exists(dir_res + '/deepvesselnet'):
+    os.makedirs(dir_res + '/deepvesselnet')
 num = 0
-for f in os.listdir(dir_res + '/cs2net'):
+for f in os.listdir(dir_res + '/deepvesselnet'):
     num += 1
 num += 1
 
-res = dir_res + '/cs2net/' + args.job_name + '_' + str(num)
+res = dir_res + '/deepvesselnet/' + args.job_name + '_' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/cs2net/' + args.job_name + '_' + str(num)
+        res = dir_res + '/deepvesselnet/' + args.job_name + '_' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
@@ -97,6 +98,7 @@ dir_data = args.dir_data
 fold_ = args.fold
 loss_param = args.loss_param
 alpha = args.alpha
+features = tuple(args.features)
 patch_size = tuple(args.patch_size)
 nbr_batch_epoch = args.nbr_batch_epoch
 nesterov = args.nesterov
@@ -115,6 +117,7 @@ wandb_config = {
     "fold": fold_,
     "loss": loss_param,
     "alpha": alpha,
+    "features": features,
     "patch_size": patch_size,
     "nbr_batch_epoch": nbr_batch_epoch,
     "nesterov": nesterov,
@@ -252,7 +255,10 @@ val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, n
 
 # %% Define Model and save the summary
 
-model = CSNet3D(classes=1, channels=1)
+kernel_size = (3, 5, 5, 3)
+strides = (1, 1, 1, 1)
+features = features[:4]
+model = DeepVesselNet(dim=3, in_channel=1, features=features, strides=strides, kernel_size=kernel_size)
     
 sigmoid = nn.Sigmoid()
 model = model.float()
@@ -328,8 +334,7 @@ for t in range(1, epochs):
 
     train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4)
     val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, num_workers=4)
-    
-   
+
     logs = train_loop(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs, alpha_=alpha)
     
     loss = logs['train_loss']
