@@ -214,9 +214,10 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
             optimizer.zero_grad()
             loss.backward()
             
+            total_norm = 0
             for p in model.parameters():
-                    param_norm = p.grad.data.norm(2)
-                    total_norm += param_norm.item() ** 2
+                param_norm = p.grad.data.norm(2)
+                total_norm += param_norm.item() ** 2
             total_norm = total_norm ** (1. / 2)
             print(f"Total norm:{total_norm}")
             
@@ -314,6 +315,7 @@ def train_loop(dataloader, validloader, model, loss_param, patch_size, input_, o
             optimizer.zero_grad()
             loss.backward()
             
+            total_norm = 0
             for p in model.parameters():
                 param_norm = p.grad.data.norm(2)
                 total_norm += param_norm.item() ** 2
