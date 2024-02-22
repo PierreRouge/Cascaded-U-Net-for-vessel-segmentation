@@ -51,16 +51,20 @@ conda env create -f environment.yml
 <p align="center"><img src="https://github.com/PierreRouge/Cascaded-U-Net-for-vessel-segmentation/blob/main/assets/results.png" alt="drawing" width="500"/>
 </p>
 
+### Future implementations
+
+We are currently working to implement several state-of-the-art methods for vascular segmentation !
+
 ### Citation
 
 If you use this repository please consider citing :
 
-@article{rouge2023cascaded,
-  title={Cascaded multitask U-Net using topological loss for vessel segmentation and centerline extraction},
-  author={Roug{\'e}, Pierre and Passat, Nicolas and Merveille, Odyss{\'e}e},
-  journal={arXiv preprint arXiv:2307.11603},
-  year={2023}
-}
+   @article{rouge2023cascaded,
+      title={Cascaded multitask U-Net using topological loss for vessel segmentation and centerline extraction},
+      author={Roug{\'e}, Pierre and Passat, Nicolas and Merveille, Odyss{\'e}e},
+      journal={arXiv preprint arXiv:2307.11603},
+      year={2023}
+   }
 
 ### Contact
 
