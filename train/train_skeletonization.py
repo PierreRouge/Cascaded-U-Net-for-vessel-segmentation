@@ -73,12 +73,12 @@ for f in os.listdir(dir_res + '/skeletonization'):
     num += 1
 num += 1
 
-res = dir_res + '/skeletonization/' + 'training_n°' + str(num)
+res = dir_res + '/skeletonization/' + args.job_name + '_' + str(num)
 dir_exist = 0
 while dir_exist != 1:
     if os.path.exists(res):
         num += 1
-        res = dir_res + '/skeletonization/' + 'training_n°' + str(num)
+        res = dir_res + '/skeletonization/' + args.job_name + '_' + str(num)
     if not os.path.exists(res):
         os.makedirs(res)
         dir_exist = 1
@@ -430,8 +430,8 @@ for t in range(1, epochs):
     
     # Save best model
     if (val_loss < val_loss_save):
-        val_loss_save = val_loss 
-        epoch_save = t + 1 
+        val_loss_save = val_loss
+        epoch_save = t + 1
     
 torch.save(model, res + '/final_model.pth')
 print("Done!")
