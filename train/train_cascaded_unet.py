@@ -175,17 +175,12 @@ for fold, (train, test) in enumerate(sp.split(np.arange(len(patient)))):
         idx_train_temp = train
         idx_test = test
         
-idx_train, idx_val = train_test_split(idx_train_temp, test_size=0.05, shuffle=True, random_state=42)
 
 patient_train = list(patient[idx_train_temp])
-patient_val = list(patient[idx_val])
 patient_test = list(patient[idx_test])
 
-        
-patient_val = patient_test
 
 data_train = []
-data_val = []
 data_test = []
 for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
@@ -196,13 +191,12 @@ for (root, directory, file) in os.walk(dir_inputs):
 for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
-        if split[0] in patient_val:
-            data_val.append(dict(zip(['image', 'GT', 'filename'], [dir_inputs + '/' + f, dir_GT + '/' + f[:-7] + '_GT.nii.gz', f])))
+        if split[0] in patient_test:
+            data_test.append(dict(zip(['image', 'GT', 'filename'], [dir_inputs + '/' + f, dir_GT + '/' + f[:-7] + '_GT.nii.gz', f])))
             
 with open(res + '/config_training.json') as json_file:
     data = json.load(json_file)
     data['train_set'] = patient_train
-    data['validation_set'] = patient_val
     data['test_set'] = patient_test
     
 with open(res + '/config_training.json', 'w') as outfile:
@@ -257,10 +251,8 @@ transform = Compose(transform_io + [CopyItemsd(keys='GT', times=1, names=['skele
 
 # Create dataset and dataloader~
 dataset_train = CacheDataset(data_train, transform_train)
-dataset_val = CacheDataset(data_val, transform)
 dataset_test = CacheDataset(data_test, transform)
 
-test_data = DataLoader(dataset_test, batch_size=batch_size, num_workers=4)
 
 # %% Define model
 kernel_size = (3, 3, 3, 3)
@@ -313,7 +305,7 @@ else:
 
 # %%Training
 
-train_history, val_history, dice_val_history, loss_seg_history, loss_skel_history, lr_history, val_loss_save, epoch_save = training_cascaded(dataset_train, dataset_val, model, optimizer, epochs, batch_size, device, res, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, loss_param=loss_param, train_size_epoch=size_train_epoch, val_size_epoch=size_val_epoch)
+train_history, val_history, dice_val_history, loss_seg_history, loss_skel_history, lr_history, val_loss_save, epoch_save = training_cascaded(dataset_train, dataset_test, model, optimizer, epochs, batch_size, device, res, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, loss_param=loss_param, train_size_epoch=size_train_epoch, val_size_epoch=size_val_epoch)
 
 
 # %% Save training and figures

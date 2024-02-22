@@ -1149,10 +1149,9 @@ def training_cascaded(dataset_train, dataset_val, model, optimizer, epochs, batc
                 "Centerlines ground truth": centerline_gt,
                 "Centerlines prediction": centerline_pred,
                 "Max intensity slice": maxi}
-
+            
+            # Save best model
             if (val_loss < val_loss_save):
-                torch.save(model, res + '/model.pth')
-                torch.save(model.state_dict(), res + '/model_weights.pth')
                 val_loss_save = val_loss
                 epoch_save = t + 1
                 
@@ -1250,12 +1249,6 @@ def training_cascaded(dataset_train, dataset_val, model, optimizer, epochs, batc
             else:
                 lr = [get_lr(optimizer)]
                 lr_history.append(lr)
-            
-            if (val_loss < val_loss_save):
-                torch.save(model, res + '/model.pth')
-                torch.save(model.state_dict(), res + '/model_weights.pth')
-                val_loss_save = val_loss
-                epoch_save = t + 1
                 
             log_dictionnary = {
                 "Loss": train_loss,
@@ -1270,6 +1263,11 @@ def training_cascaded(dataset_train, dataset_val, model, optimizer, epochs, batc
                 "Learning Rate": float(lr[0]),
                 "Epoch": t + 1}
             wandb.log(log_dictionnary)
+            
+            # Save best model
+            if (val_loss < val_loss_save):
+                val_loss_save = val_loss
+                epoch_save = t + 1
             
         print("Done!")
         return train_history, val_history, val_dice_history, loss_seg_history, loss_skel_history, lr_history, val_loss_save, epoch_save
@@ -1412,9 +1410,8 @@ def training_cascaded(dataset_train, dataset_val, model, optimizer, epochs, batc
             
             wandb.log(log_dictionnary)
             
+            # Save best model
             if (val_loss < val_loss_save):
-                torch.save(model, res + '/model.pth')
-                torch.save(model.state_dict(), res + '/model_weights.pth')
                 val_loss_save = val_loss
                 epoch_save = t + 1
         

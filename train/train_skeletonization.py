@@ -156,20 +156,13 @@ for fold, (train, test) in enumerate(sp.split(np.arange(len(patient)))):
     if fold == fold_:
         idx_train_temp = train
         idx_test = test
-        
-idx_train, idx_val = train_test_split(idx_train_temp, test_size=0.05, shuffle=True, random_state=42)
 
 patient_train = list(patient[idx_train_temp])
-patient_val = list(patient[idx_val])
 patient_test = list(patient[idx_test])
-
 
 # Create dictionnaries for the pytorch dataset
 data_train = []
-data_val = []
 data_test = []
-
-
 for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
@@ -181,15 +174,14 @@ for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
         name = f.split('.')[0]
-        if split[0] in patient_val:
-            data_val.append(dict(zip(['image', 'segmentation', 'GT', 'filename'], [dir_inputs + '/' + f, dir_inputs_seg + '/' + name + '_GT.nii.gz', dir_GT + '/' + name + '_GT_skeleton.nii.gz', f])))
+        if split[0] in patient_test:
+            data_test.append(dict(zip(['image', 'segmentation', 'GT', 'filename'], [dir_inputs + '/' + f, dir_inputs_seg + '/' + name + '_GT.nii.gz', dir_GT + '/' + name + '_GT_skeleton.nii.gz', f])))
             
             
 # Save patient split in json file
 with open(res + '/config_training.json') as json_file:
     data = json.load(json_file)
     data['train_set'] = patient_train
-    data['validation_set'] = patient_val
     data['test_set'] = patient_test
     
 with open(res + '/config_training.json', 'w') as outfile:
@@ -230,8 +222,7 @@ transform = Compose(transform_io)
 
 # Create dataset and dataloader~
 dataset_train = CacheDataset(data_train, transform_train)
-dataset_val = CacheDataset(data_val, transform)
-dataset_test = CacheDataset(data_test, transform)
+dataset_val = CacheDataset(data_test, transform)
 
 indices_train = np.random.choice(np.arange(0, len(dataset_train)), size=size_train_epoch)
 sampler_train = SubsetRandomSampler(indices_train)
@@ -439,8 +430,6 @@ for t in range(1, epochs):
     
     # Save best model
     if (val_loss < val_loss_save):
-        torch.save(model, res + '/model.pth')
-        torch.save(model.state_dict(), res + '/model_weights.pth')
         val_loss_save = val_loss 
         epoch_save = t + 1 
     
