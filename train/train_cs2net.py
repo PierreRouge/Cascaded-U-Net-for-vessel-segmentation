@@ -34,7 +34,7 @@ from batchgenerators.transforms.spatial_transforms import SpatialTransform, Mirr
 import sys
 sys.path.append('..')
 from utils.utils_pytorch import get_lr
-from utils.utils_training import train_loop
+from utils.utils_cs2net import train_loop
 from network.cs2net import CSNet3D
 
 # This warning will be patch in new versions of monai

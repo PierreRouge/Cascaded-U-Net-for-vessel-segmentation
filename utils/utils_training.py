@@ -131,8 +131,7 @@ def train_loop(dataloader, validloader, model, loss_param, input_, optimizer, de
     
     if loss_param == "BCE":
         
-        pos_weights = torch.ones((64, 64, 64), device=device) * 200
-        loss_0 = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
+        loss_0 = nn.BCELoss()
         model.eval()
         val_loss_0 = 0.0
         val_dice_0 = 0.0
