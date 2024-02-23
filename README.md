@@ -59,12 +59,14 @@ We are currently working to implement several state-of-the-art methods for vascu
 
 If you use this repository please consider citing :
 
-   @article{rouge2023cascaded,
+```shell
+@article{rouge2023cascaded,
       title={Cascaded multitask U-Net using topological loss for vessel segmentation and centerline extraction},
       author={Roug{\'e}, Pierre and Passat, Nicolas and Merveille, Odyss{\'e}e},
       journal={arXiv preprint arXiv:2307.11603},
       year={2023}
    }
+```
 
 ### Contact
 
