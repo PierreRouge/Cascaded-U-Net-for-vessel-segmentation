@@ -72,11 +72,12 @@ data_test = []
 for (root, directory, file) in os.walk(dir_inputs):
     for f in file:
         split = f.split('-')
+        name = f.split('.')[0]
         if split[0] in patient_test:
             image = nib.load(dir_inputs + '/' + f)
             headers = image.header
             pixdim = headers['pixdim'][1:4]
-            data_test.append(dict(zip(['image1', 'image2', 'image3', 'image4', 'GT', 'filename', 'pixdim'], [dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_GT + '/' + split[0] + '-MRA_GT.nii.gz', f, pixdim])))
+            data_test.append(dict(zip(['image1', 'image2', 'image3', 'image4', 'GT', 'filename', 'pixdim'], [dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz', f, pixdim])))
 
 # Define transforms
 keys = ('image1', 'image2', 'image3', 'image4', 'GT')
