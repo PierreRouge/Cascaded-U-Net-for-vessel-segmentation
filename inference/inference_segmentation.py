@@ -39,10 +39,10 @@ parser.add_argument("--augmentation", default=True, help="Do test time augmentat
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
 
-dir_inputs = args.dir_data + '/Bullit/raw/Images'
+dir_inputs = args.dir_data + 'Images'
 dir_res = args.dir_training + '/res'
 dir_seg = dir_res + '/seg'
-dir_GT = args.dir_data + '/Bullit/raw/GT'
+dir_GT = args.dir_data + 'GT'
 
 if not os.path.exists(dir_res):
     os.makedirs(dir_res)
