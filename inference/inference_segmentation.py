@@ -203,7 +203,7 @@ with torch.no_grad():
         test_pred = test_pred.cpu()
         test_pred = torch.where(test_pred > 0, torch.ones(test_pred.shape, dtype=torch.float), test_pred)
 
-        y_pred = test_pred[0][0]
+        y_pred = test_pred[0]
         y_pred = y_pred.detach().numpy()
         
         y_true = y[0][0].detach().cpu().numpy()
