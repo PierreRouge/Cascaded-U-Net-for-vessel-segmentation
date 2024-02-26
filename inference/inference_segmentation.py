@@ -32,7 +32,7 @@ from utils.utils_measure import dice_numpy, cldice_numpy, sensitivity_specificit
 # %% Define model, data and outputs directories
 
 parser = argparse.ArgumentParser(description='Inference for segmentation')
-parser.add_argument('--dir_traning', metavar='dir_training', type=str, nargs="?", default='', help='Training directory')
+parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='', help='Data directory')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
 parser.add_argument("--augmentation", default=True, help="Do test time augmentation", action="store_true")
