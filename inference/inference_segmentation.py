@@ -207,6 +207,8 @@ with torch.no_grad():
         y_pred = y_pred.detach().numpy()
         
         y_true = y[0][0].detach().cpu().numpy()
+        print(y_pred.shape)
+        print(y_true.shape)
         
         if args.postprocessing:
             print('Postprocessing...')
