@@ -159,7 +159,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
    
     
 if __name__ == '__main__':
-    dir_data = '../../../Thèse_Rougé_Pierre/Data/Bullit/raw/GT/*'
+    dir_data = '/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/GT/*'
     
     for f in glob(dir_data):
         image = nib.load(f)
