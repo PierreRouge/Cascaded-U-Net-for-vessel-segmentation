@@ -42,7 +42,8 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
     if loss_param == "deep-distance-transform":
         loss_0 = dice_loss_pytorch
         loss_1 = nn.BCELoss()
-        loss_ce_dtm = nn.CrossEntropyLoss()
+        weights = [1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1/ 50, 1 / 20, 1 / 5]
+        loss_ce_dtm = nn.CrossEntropyLoss(weight=weights)
         
         model.eval()
         val_loss_0 = 0.0
@@ -166,7 +167,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
    
     
 if __name__ == '__main__':
-    dir_data = '/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/GT/*'
+    dir_data = '/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/GT/*'
     
     for f in glob(dir_data):
         image = nib.load(f)
@@ -178,3 +179,19 @@ if __name__ == '__main__':
         
         nib.save(dtm_nii, f.replace('GT', 'DistanceMap'))
         print(np.unique(dtm))
+        print("Number of radius=0")
+        print(np.sum(dtm==0))
+        print("Number of radius=1")
+        print(np.sum(dtm==1))
+        print("Number of radius=2")
+        print(np.sum(dtm==2))
+        print("Number of radius=3")
+        print(np.sum(dtm==3))
+        print("Number of radius=4")
+        print(np.sum(dtm==4))
+        print("Number of radius=5")
+        print(np.sum(dtm==5))
+        print("Number of radius=6")
+        print(np.sum(dtm==6))
+        print("Number of radius=7")
+        print(np.sum(dtm==7))
