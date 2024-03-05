@@ -42,7 +42,8 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
     if loss_param == "deep-distance-transform":
         loss_0 = dice_loss_pytorch
         loss_1 = nn.BCELoss()
-        weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
+        # weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
+        weights = torch.tensor([1.0, 250.0, 5000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0], device=device)
         loss_ce_dtm = nn.CrossEntropyLoss(weight=weights)
         
         model.eval()
@@ -178,7 +179,9 @@ if __name__ == '__main__':
         dtm_nii = nib.Nifti1Image(dtm, affine=image.affine, header=image.header)
         
         nib.save(dtm_nii, f.replace('GT', 'DistanceMap'))
+        
         print(np.unique(dtm))
+        print(np.sum(dtm))
         print("Number of radius=0")
         print(np.sum(dtm==0))
         print("Number of radius=1")
