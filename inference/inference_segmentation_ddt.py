@@ -42,6 +42,7 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 parser = argparse.ArgumentParser(description='Inference for segmentation')
 parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/deep_distance/saved_for_inference/Unet_ddt_fold0_Bullitt_2', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/', help='Data directory')
+parser.add_argument('--K', metavar='K', type=int, nargs="?", default=8, help='Number of class for distance map')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
 parser.add_argument("--augmentation", default=False, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
@@ -123,7 +124,7 @@ print('GEOMETRY-AWARE REFINEMENT: preparing soften ball')
 channel_dim = 2
 list_kernel = []
 str_ = channel_dim - 1
-k=8
+k=args.K
 for radius in range(1, k):
     print(radius)
     kernel = torch.as_tensor(np.repeat(np.expand_dims(ball(radius), 0)[np.newaxis, ...], str_, axis=0),
@@ -238,17 +239,21 @@ with torch.no_grad():
         print(test_pred.shape)
         
         
-        k = 8
+        k = args.K
         #GEOMETRY-AWARE REFINEMENT
         print('GEOMETRY-AWARE REFINEMENT: applying soften ball...')
-        ys = torch.zeros_like(y_pred,dtype= torch.float16).to(device)
+        ys, yv = torch.zeros_like(y_pred,dtype= torch.float16).to(device), torch.zeros_like(y_pred,dtype= torch.float16).to(device)
         ddt = softmax(ddt1)
+        ddt = torch.argmax(ddt, dim=1)
+        print(torch.sum(ddt))
         skel = y_pred > 0.9
         skel = skel.type(torch.int).type(torch.float16)
         for radius in range(1,k):
              print(radius)
              kernel = list_kernel[radius-1]
-             ys.add_(torch.clamp(torch.nn.functional.conv3d(skel, kernel, padding=radius, groups=str_), 0, 1))
+             yv = ddt == radius
+             print(torch.sum(yv))
+             ys.add_(torch.clamp(torch.nn.functional.conv3d(skel*yv, kernel, padding=radius, groups=str_), 0, 1))
              del kernel
 
         ys = torch.clamp(ys, 0, 1)

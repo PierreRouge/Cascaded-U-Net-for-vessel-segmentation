@@ -132,6 +132,11 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             dice = dice_metric_pytorch(pred_seg, y_seg)
             dice = dice.cpu().detach().numpy()
             dice = np.mean(dice)
+            
+            debug_dtm = torch.argmax(softmax(pred_dtm), dim=1)
+            print("Sum dtm")
+            print(torch.sum(debug_dtm))
+            
 
             # Backpropagation
             optimizer.zero_grad()
