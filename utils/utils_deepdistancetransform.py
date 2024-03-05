@@ -136,6 +136,8 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             debug_dtm = torch.argmax(softmax(pred_dtm), dim=1)
             print("Sum dtm")
             print(torch.sum(debug_dtm))
+            print("Unique dtm")
+            print(torch.unique(debug_dtm))
             
 
             # Backpropagation

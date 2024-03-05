@@ -201,7 +201,8 @@ with torch.no_grad():
             
         print()
         print("Inference image1...")
-        Y1, ddt1 = sliding_window_inference(inputs=X1, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
+        Y1, _ = sliding_window_inference(inputs=X1, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
+        _, ddt1 = sliding_window_inference(inputs=X1, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.0, progress=True)
         if args.augmentation:
             print()
             print("Inference image2...")
@@ -243,8 +244,7 @@ with torch.no_grad():
         #GEOMETRY-AWARE REFINEMENT
         print('GEOMETRY-AWARE REFINEMENT: applying soften ball...')
         ys, yv = torch.zeros_like(y_pred,dtype= torch.float16).to(device), torch.zeros_like(y_pred,dtype= torch.float16).to(device)
-        ddt = softmax(ddt1)
-        ddt = torch.argmax(ddt, dim=1)
+        ddt = torch.argmax(softmax(ddt1), dim=1)
         print(torch.sum(ddt))
         skel = y_pred > 0.9
         skel = skel.type(torch.int).type(torch.float16)
