@@ -42,7 +42,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
     if loss_param == "deep-distance-transform":
         loss_0 = dice_loss_pytorch
         loss_1 = nn.BCELoss()
-        weights = [1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1/ 50, 1 / 20, 1 / 5]
+        weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
         loss_ce_dtm = nn.CrossEntropyLoss(weight=weights)
         
         model.eval()
