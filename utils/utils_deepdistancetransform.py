@@ -38,9 +38,11 @@ def distance_transform(binary_array):
 
 def loss_ddt(K):
     def loss(y_pred, y_true):
+        b, c, s1, s2, s3 = y_pred.shape
         y_pred_softmax = softmax(y_pred)
-        wv = torch.abs(torch.argmax(y_pred_softmax, dim=1) - y_true) / K
-        value = wv * torch.log(1 - torch.max(y_pred_softmax, dim=1))
+        wv = torch.abs(torch.argmax(y_pred_softmax, dim=1) - y_true.view(b, s1, s2, s3)) / K
+        max_tensor, _ = torch.max(y_pred_softmax, dim=1)
+        value = torch.mean(wv * torch.log(1 - max_tensor))
         return value
     return loss
 

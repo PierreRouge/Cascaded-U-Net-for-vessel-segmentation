@@ -144,7 +144,7 @@ dir_GT = os.path.join(dir_data, 'GT')
 # Separate patients for training, validation and test
 patient = []
 for (root, directory, file) in os.walk(dir_inputs):
-    for f in file:
+    for f in file[:5]:
         split = f.split('-')
         patient.append(split[0])
 patient = np.array(patient)
@@ -287,7 +287,7 @@ val_dice_history = []
 
 print(f"Epoch {1}\n-------------------------------")
 epoch_save = 1
-logs = train_loop_DeepDistance(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=1, max_epoch=epochs)
+logs = train_loop_DeepDistance(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=1, max_epoch=epochs, K=args.K)
 
 loss = logs['train_loss']
 loss_dice = logs['loss_dice']
@@ -329,7 +329,7 @@ for t in range(1, epochs):
     train_data = DataLoader(dataset_train, batch_size=batch_size, sampler=sampler_train, num_workers=4)
     val_data = DataLoader(dataset_val, batch_size=batch_size, sampler=sampler_val, num_workers=4)
 
-    logs = train_loop_DeepDistance(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs)
+    logs = train_loop_DeepDistance(train_data, val_data, model=model, loss_param=loss_param, input_='MRI', optimizer=optimizer, device=device, epoch=t + 1, max_epoch=epochs, K=args.K)
     
     loss = logs['train_loss']
     loss_dice = logs['loss_dice']

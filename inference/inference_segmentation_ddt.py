@@ -40,7 +40,7 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 # %% Define model, data and outputs directories
 
 parser = argparse.ArgumentParser(description='Inference for segmentation')
-parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/deep_distance/saved_for_inference/Unet_ddt_fold0_Bullitt_2', help='Training directory')
+parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/deep_distance/saved_for_inference/Unet_ddt_fold4_Bullitt_7', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/', help='Data directory')
 parser.add_argument('--K', metavar='K', type=int, nargs="?", default=8, help='Number of class for distance map')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
