@@ -34,17 +34,27 @@ softmax = nn.Softmax(dim=1)
 def distance_transform(binary_array):
     dtm = np.round(distance_transform_edt(binary_array))
     return dtm
-    
+
+
+def loss_ddt(K):
+    def loss(y_pred, y_true):
+        y_pred_softmax = softmax(y_pred)
+        wv = torch.abs(torch.argmax(y_pred_softmax, dim=1) - y_true) / K
+        value = wv * torch.log(1 - torch.max(y_pred_softmax, dim=1))
+        return value
+    return loss
+
 
 # Training
-def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, optimizer, device, epoch, max_epoch):
+def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, optimizer, device, epoch, max_epoch, K):
 
     if loss_param == "deep-distance-transform":
         loss_0 = dice_loss_pytorch
         loss_1 = nn.BCELoss()
-        # weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
-        weights = torch.tensor([1.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0], device=device)
+        weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
+        # weights = torch.tensor([1.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], device=device)
         loss_ce_dtm = nn.CrossEntropyLoss(weight=weights)
+        loss_term = loss_ddt(K)
         
         model.eval()
         val_loss_0 = 0.0
@@ -73,7 +83,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
                 pred_val_seg = sigmoid(pred_val_seg)
                 # pred_val_dtm = softmax(pred_val_dtm)
   
-                val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm.view(b, s1, s2, s3).long())
+                val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm.view(b, s1, s2, s3).long()) + loss_term(pred_val_dtm, y_val_dtm)
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
                 
@@ -121,7 +131,8 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             loss_dice = loss_0(pred_seg, y_seg)
             loss_bce = loss_1(pred_seg, y_seg)
             loss_dtm = loss_ce_dtm(pred_dtm, y_dtm.view(b, s1, s2, s3).long())
-            loss = 0.5 * (loss_dice + loss_bce) + 0.5 * loss_dtm
+            loss_dist = loss_term(pred_dtm, y_dtm)
+            loss = 0.5 * (loss_dice + loss_bce) + 0.5 * (loss_dtm + loss_dist)
             train_loss += loss.item()
             train_loss_dice += loss_dice.item()
             train_loss_bce += loss_bce.item()
