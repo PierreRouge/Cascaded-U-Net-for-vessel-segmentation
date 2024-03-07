@@ -16,25 +16,28 @@ import nibabel as nib
 import numpy as np
 import sys
 import argparse
-
-from skimage.morphology import remove_small_objects
+import warnings
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
 from monai.data import CacheDataset
-from monai.transforms import AddChanneld, LoadImaged, ToTensord, AddChannel, NormalizeIntensityd, Flipd, Flip
+from monai.transforms import LoadImaged, ToTensord, NormalizeIntensityd, Flipd, Flip, EnsureChannelFirstd, EnsureChannelFirst, RemoveSmallObjects
 from monai.inferers import sliding_window_inference
+from monai.metrics import SurfaceDiceMetric, SurfaceDistanceMetric, HausdorffDistanceMetric, DiceMetric
 
 sys.path.append('..')
 from utils.utils_measure import dice_numpy, cldice_numpy, sensitivity_specificity_precision, mcc_numpy, euler_number_error_numpy, b0_error_numpy, b1_error_numpy, b2_error_numpy
 
+# This warning will be patch in new versions of monai
+warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is deprecated')
+
 # %% Define model, data and outputs directories
 
 parser = argparse.ArgumentParser(description='Inference for segmentation')
-parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='', help='Training directory')
-parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='', help='Data directory')
-parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 64, 64], help='Patch _size')
+parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/cs2net/CS2Net_fold0_Bullitt_2', help='Training directory')
+parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/', help='Data directory')
+parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
 parser.add_argument("--augmentation", default=True, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
@@ -84,7 +87,7 @@ keys = ('image1', 'image2', 'image3', 'image4', 'GT')
 keys2 = ('image1', 'image2', 'image3', 'image4')
 
 
-transform = transforms.Compose([LoadImaged(keys), ToTensord(keys, dtype=torch.double, track_meta=True), AddChanneld(keys), NormalizeIntensityd(keys=keys2),
+transform = transforms.Compose([LoadImaged(keys), ToTensord(keys, dtype=torch.double, track_meta=True), EnsureChannelFirstd(keys), NormalizeIntensityd(keys=keys2),
                                 Flipd(keys=('image2'), spatial_axis=0), Flipd(keys=('image3'), spatial_axis=1), Flipd(keys=('image4'), spatial_axis=2)])
 
 # Create dataset and dataloader
@@ -102,7 +105,7 @@ model.eval()
 
 res = open(dir_res + '/res.csv', 'w')
 fieldnames = ['Patient', 'Dice', 'clDice', 'Precision', 'Sensitivity', 'Euler_Number_Error', 'B0_error', 'B1_error', 'B2_error', 'Euler_Number_predicted',
-              'Euler_Number_GT', 'B0_predicted', 'B0_GT', 'B1_predicted', 'B1_GT', 'B2_predicted', 'B2_GT']
+              'Euler_Number_GT', 'B0_predicted', 'B0_GT', 'B1_predicted', 'B1_GT', 'B2_predicted', 'B2_GT', 'ASSD', 'HD', 'HD95', 'SurfaceDice']
 writer = csv.DictWriter(res, fieldnames=fieldnames)
 writer.writeheader()
 
@@ -124,6 +127,10 @@ list_b1_pred = []
 list_b1_gt = []
 list_b2_pred = []
 list_b2_gt = []
+list_assd = []
+list_hd = []
+list_hd95 = []
+list_surface_dice = []
 dict_summary = {}
 with torch.no_grad():
     for batch, data in enumerate(test_data):
@@ -143,6 +150,8 @@ with torch.no_grad():
         y = data['GT']
         y = y.to(device)
         
+        B, C, H, D, W = y.shape
+        
         print()
         print("Original shape:")
         print(X1.shape)
@@ -152,7 +161,7 @@ with torch.no_grad():
         X3 = X3.float()
         X4 = X4.float()
 
-        add = AddChannel()
+        add = EnsureChannelFirst()
 
         print()
         print("To GPU ...")
@@ -191,34 +200,61 @@ with torch.no_grad():
             Y3 = sigmoid(Y3)
             Y4 = sigmoid(Y4)
         
-            test_pred = torch.mean(torch.cat((Y1, Y2, Y3, Y4)), dim=0)
+            y_pred = torch.mean(torch.cat((Y1, Y2, Y3, Y4)), dim=0)
             
         else:
-            test_pred = Y1[0]
+            y_pred = Y1[0]
               
         print()
         print("New shape:")
-        print(test_pred.shape)
+        print(y_pred.shape)
         
-        test_pred = nn.functional.threshold(test_pred, threshold=0.5, value=0)
-        test_pred = test_pred.cpu()
-        test_pred = torch.where(test_pred > 0, torch.ones(test_pred.shape, dtype=torch.float), test_pred)
-
-        y_pred = test_pred[0]
-        y_pred = y_pred.detach().numpy()
+        # Tresholding to binary segmentation
+        y_pred = nn.functional.threshold(y_pred, threshold=0.5, value=0)
+        y_pred = torch.where(y_pred > 0, torch.ones(y_pred.shape, dtype=torch.float, device=device), y_pred)
         
-        y_true = y[0][0].detach().cpu().numpy()
+        # Transform to one-hot for Monai format
+        y_pred = nn.functional.one_hot(y_pred[0].long())
+        y_true = nn.functional.one_hot(y[0][0].long())
+        
+        # Permute axis and add channel to have [B, C, H, D, W]
+        y_pred = add(y_pred.permute(3, 0, 1, 2))
+        y_true = add(y_true.permute(3, 0, 1, 2))
+        
+        # Post-processing
+        remove_small_objects_transform = RemoveSmallObjects(min_size=100)
+        if args.postprocessing:
+            print('Postprocessing...')
+            y_true = remove_small_objects_transform(y_true)
+            y_pred = remove_small_objects_transform(y_pred)
+        
+        # Monai metrics (on Pytorch Tensor)
+        assd_metric = SurfaceDistanceMetric(symmetric=True)
+        hd_metric = HausdorffDistanceMetric()
+        hd95_metric = HausdorffDistanceMetric(percentile=95)
+        surface_dice_metric = SurfaceDiceMetric(class_thresholds=[3])
+        dice_metric = DiceMetric(include_background=False)
+        
+        # Compute metrics from monai
+        assd = assd_metric(y_pred, y_true).item()
+        hd = hd_metric(y_pred, y_true).item()
+        hd95 = hd95_metric(y_pred, y_true).item()
+        surface_dice = surface_dice_metric(y_pred, y_true).item()
+        
+        # From one-hot to standard format
+        y_pred = torch.argmax(y_pred, dim=1)
+        y_true = torch.argmax(y_true, dim=1)
+        
+        # To numpy to compute numpy metrics
+        y_pred = y_pred[0].detach().cpu().numpy()
+        y_true = y_true[0].detach().cpu().numpy()
+        
         print(y_pred.shape)
         print(y_true.shape)
         
-        if args.postprocessing:
-            print('Postprocessing...')
-            y_true = remove_small_objects(np.array(y_true, dtype=bool), min_size=100)
-            y_pred = remove_small_objects(np.array(y_pred, dtype=bool), min_size=100)
-        
         print("Compute metrics...")
         dice = dice_numpy(y_true, y_pred)
-        mcc = mcc_numpy(y_true, y_pred)
+        # mcc = mcc_numpy(y_true, y_pred)
         cl_dice = cldice_numpy(y_true, y_pred)
         sens, spec, prec = sensitivity_specificity_precision(y_true, y_pred)
         euler_number_error, euler_number_gt, euler_number_pred = euler_number_error_numpy(y_true, y_pred, method='difference')
@@ -228,7 +264,7 @@ with torch.no_grad():
 
         list_dice.append(dice)
         list_cldice.append(cl_dice)
-        list_mcc.append(mcc)
+        # list_mcc.append(mcc)
         list_sens.append(sens)
         list_spec.append(spec)
         list_prec.append(prec)
@@ -244,30 +280,10 @@ with torch.no_grad():
         list_b1_gt.append(b1_gt)
         list_b2_pred.append(b2_pred)
         list_b2_gt.append(b2_gt)
-        
-        dict_metrics = {
-            "Patient": name,
-            "Dice": str(dice),
-            "clDice": str(cl_dice),
-            "MCC": str(mcc),
-            "Sensitivity": str(sens),
-            "Specificity": str(spec),
-            "Precision": str(prec),
-            "Euler_Number_Error": str(euler_number_error),
-            "B0_error": str(b0_error),
-            "B1_error": str(b1_error),
-            "B2_error": str(b2_error),
-            "Euler_Number_pred": str(euler_number_pred),
-            "Euler_Number_gt": str(euler_number_gt),
-            "B0_pred": str(b0_pred),
-            "B0_gt": str(b0_gt),
-            "B1_pred": str(b1_pred),
-            "B1_gt": str(b1_gt),
-            "B2_pred": str(b1_pred),
-            "B2_gt": str(b2_gt),
-        }
-        
-        dict_summary[name] = dict_metrics
+        list_assd.append(assd)
+        list_hd.append(hd)
+        list_hd95.append(hd95)
+        list_surface_dice.append(surface_dice)
         
         dict_csv = {
             "Patient": name,
@@ -287,6 +303,10 @@ with torch.no_grad():
             "B1_GT": b1_gt,
             "B2_predicted": b1_pred,
             "B2_GT": b2_gt,
+            "ASSD": assd,
+            "HD": hd,
+            "HD95": hd95,
+            "SurfaceDice": surface_dice
         }
         writer.writerow(dict_csv)
         
@@ -295,8 +315,6 @@ with torch.no_grad():
         print(dice)
         print("clDice")
         print(cl_dice)
-        print("MCC")
-        print(mcc)
         print("Sens, Spec, Prec")
         print(sens, spec, prec)
         print("Euler_Number_Error")
@@ -323,6 +341,14 @@ with torch.no_grad():
         print(b2_pred)
         print("B2_GT")
         print(b2_gt)
+        print("ASSD")
+        print(assd)
+        print("HD")
+        print(hd)
+        print("HD95")
+        print(hd95)
+        print("SurfaceDice")
+        print(surface_dice)
         
         image_path = os.path.join(dir_inputs, name + '.nii.gz')
         segmentation_path = os.path.join(dir_seg, name + '.nii.gz')
@@ -352,6 +378,10 @@ dict_csv = {
     "B1_GT": np.mean(list_b1_gt),
     "B2_predicted": np.mean(list_b1_pred),
     "B2_GT": np.mean(list_b2_gt),
+    "ASSD": np.mean(list_assd),
+    "HD": np.mean(list_hd),
+    "HD95": np.mean(list_hd95),
+    "SurfaceDice": np.mean(list_surface_dice)
 }
 writer.writerow(dict_csv)
 
@@ -373,6 +403,10 @@ dict_csv = {
     "B1_GT": np.std(list_b1_gt),
     "B2_predicted": np.std(list_b1_pred),
     "B2_GT": np.std(list_b2_gt),
+    "ASSD": np.std(list_assd),
+    "HD": np.std(list_hd),
+    "HD95": np.std(list_hd95),
+    "SurfaceDice": np.std(list_surface_dice)
 }
 writer.writerow(dict_csv)
 
@@ -416,30 +450,11 @@ print("Mean B2 pred")
 print(np.mean(list_b2_pred))
 print("Mean B2 GT")
 print(np.mean(list_b2_gt))
-
-
-dict_mean = {
-    "Dice": str(np.mean(list_dice)),
-    "clDice": str(np.mean(list_cldice)),
-    "MCC": str(np.mean(list_mcc)),
-    "Sensitivity": str(np.mean(list_sens)),
-    "Specificity": str(np.mean(list_spec)),
-    "Precision": str(np.mean(list_prec)),
-    "Euler_Number_Error": str(np.mean(list_euler_error)),
-    "B0_error": str(np.mean(list_b0_error)),
-    "B1_error": str(np.mean(list_b1_error)),
-    "B2_error": str(np.mean(list_b2_error)),
-    "Euler_Number_pred": str(np.mean(list_euler_pred)),
-    "Euler_Number_GT": str(np.mean(list_euler_gt)),
-    "B0_pred": str(np.mean(list_b0_pred)),
-    "B0_GT": str(np.mean(list_b0_gt)),
-    "B1_pred": str(np.mean(list_b1_pred)),
-    "B1_GT": str(np.mean(list_b1_gt)),
-    "B2_pred": str(np.mean(list_b2_pred)),
-    "B2_GT": str(np.mean(list_b2_gt)),
-}
-
-dict_summary["Mean"] = dict_mean
-
-with open(dir_res + '/summary.json', 'a') as outfile:
-    json.dump(dict_summary, outfile)
+print("ASSD")
+print(np.mean(list_assd))
+print("HD")
+print(np.mean(list_hd))
+print("HD95")
+print(np.mean(list_hd95))
+print("SurfaceDice")
+print(np.mean(list_surface_dice))
