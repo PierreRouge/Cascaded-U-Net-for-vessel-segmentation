@@ -35,10 +35,10 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 # %% Define model, data and outputs directories
 
 parser = argparse.ArgumentParser(description='Inference for segmentation')
-parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/cs2net/CS2Net_fold0_Bullitt_2', help='Training directory')
-parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/', help='Data directory')
+parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/cascaded-unet/cascaded-unet_fold0_IXI_2', help='Training directory')
+parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/', help='Data directory')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
-parser.add_argument("--augmentation", default=True, help="Do test time augmentation", action="store_true")
+parser.add_argument("--augmentation", default=False, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
 
@@ -218,8 +218,8 @@ with torch.no_grad():
         y_true = nn.functional.one_hot(y[0][0].long())
         
         # Permute axis and add channel to have [B, C, H, D, W]
-        y_pred = add(y_pred.permute(3, 0, 1, 2))
-        y_true = add(y_true.permute(3, 0, 1, 2))
+        y_pred = y_pred.permute(3, 0, 1, 2).view(1, 2, H, D, W)
+        y_true = y_true.permute(3, 0, 1, 2).view(1, 2, H, D, W)
         
         # Post-processing
         remove_small_objects_transform = RemoveSmallObjects(min_size=100)
