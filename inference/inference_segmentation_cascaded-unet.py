@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser(description='Inference for segmentation')
 parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/cascaded-unet/cascaded-unet_fold0_IXI_2', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/', help='Data directory')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
-parser.add_argument("--augmentation", default=False, help="Do test time augmentation", action="store_true")
+parser.add_argument("--augmentation", default=True, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
 
@@ -190,9 +190,9 @@ with torch.no_grad():
            
             print()
             print("Flip back ...")
-            Y2 = add(flip1(Y2[0]))
-            Y3 = add(flip2(Y3[0]))
-            Y4 = add(flip3(Y4[0]))
+            Y2 = flip1(Y2[0]).view(1, 1, H, D, W)
+            Y3 = flip2(Y3[0]).view(1, 1, H, D, W)
+            Y4 = flip3(Y4[0]).view(1, 1, H, D, W)
             
         Y1 = sigmoid(Y1)
         if args.augmentation:

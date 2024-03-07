@@ -190,9 +190,9 @@ with torch.no_grad():
            
             print()
             print("Flip back ...")
-            Y2 = add(flip1(Y2[0]))
-            Y3 = add(flip2(Y3[0]))
-            Y4 = add(flip3(Y4[0]))
+            Y2 = flip1(Y2[0]).view(1, 1, H, D, W)
+            Y3 = flip2(Y3[0]).view(1, 1, H, D, W)
+            Y4 = flip3(Y4[0]).view(1, 1, H, D, W)
             
         Y1 = sigmoid(Y1)
         if args.augmentation:
@@ -218,8 +218,8 @@ with torch.no_grad():
         y_true = nn.functional.one_hot(y[0][0].long())
         
         # Permute axis and add channel to have [B, C, H, D, W]
-        y_pred = add(y_pred.permute(3, 0, 1, 2))
-        y_true = add(y_true.permute(3, 0, 1, 2))
+        y_pred = y_pred.permute(3, 0, 1, 2).view(1, 2, H, D, W)
+        y_true = y_true.permute(3, 0, 1, 2).view(1, 2, H, D, W)
         
         # Post-processing
         remove_small_objects_transform = RemoveSmallObjects(min_size=100)
