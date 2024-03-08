@@ -21,7 +21,7 @@ from torchinfo import summary
 from torch.optim.lr_scheduler import LinearLR
 from torchviz import make_dot
 
-from monai.transforms import AddChanneld, LoadImaged, EnsureTyped, NormalizeIntensityd, RandSpatialCropd, adaptor, SqueezeDimd, Compose, EnsureChannelFirstd
+from monai.transforms import LoadImaged, EnsureTyped, NormalizeIntensityd, RandSpatialCropd, adaptor, SqueezeDimd, Compose, EnsureChannelFirstd
 from monai.data import CacheDataset
 
 from batchgenerators.transforms.color_transforms import BrightnessMultiplicativeTransform, \
@@ -196,7 +196,7 @@ prob = 0.2
 transform_io = [LoadImaged(keys), EnsureChannelFirstd(keys), NormalizeIntensityd(keys='image'), RandSpatialCropd(keys, roi_size=patch_size, random_size=False)]
 
 # Data augmentation
-transform_augmentation = [AddChanneld(keys), EnsureTyped(keys, data_type="numpy")]
+transform_augmentation = [EnsureChannelFirstd(keys), EnsureTyped(keys, data_type="numpy")]
 
 transform_augmentation.append(adaptor(SpatialTransform(patch_size, patch_center_dist_from_border=None,
                                                        do_elastic_deform=False, alpha=(0.0, 900.0),
