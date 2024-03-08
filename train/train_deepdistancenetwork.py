@@ -144,7 +144,7 @@ dir_GT = os.path.join(dir_data, 'GT')
 # Separate patients for training, validation and test
 patient = []
 for (root, directory, file) in os.walk(dir_inputs):
-    for f in file[:5]:
+    for f in file:
         split = f.split('-')
         patient.append(split[0])
 patient = np.array(patient)

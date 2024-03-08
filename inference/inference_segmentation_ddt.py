@@ -18,11 +18,14 @@ import sys
 import argparse
 import warnings
 
+from skimage.morphology import ball
+from scipy.ndimage.filters import gaussian_filter
+
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
 from monai.data import CacheDataset
-from monai.transforms import LoadImaged, ToTensord, NormalizeIntensityd, Flipd, Flip, EnsureChannelFirstd, EnsureChannelFirst, RemoveSmallObjects
+from monai.transforms import LoadImaged, ToTensord, NormalizeIntensityd, Flipd, Flip, EnsureChannelFirstd, RemoveSmallObjects
 from monai.inferers import sliding_window_inference
 from monai.metrics import SurfaceDiceMetric, SurfaceDistanceMetric, HausdorffDistanceMetric, DiceMetric
 
@@ -35,10 +38,11 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 # %% Define model, data and outputs directories
 
 parser = argparse.ArgumentParser(description='Inference for segmentation')
-parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/cs2net/CS2Net_fold0_Bullitt_2', help='Training directory')
+parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/deep_distance/saved_for_inference/Unet_ddt_fold0_Bullitt_18', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/', help='Data directory')
+parser.add_argument('--K', metavar='K', type=int, nargs="?", default=8, help='Number of class for distance map')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
-parser.add_argument("--augmentation", default=True, help="Do test time augmentation", action="store_true")
+parser.add_argument("--augmentation", default=False, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
 
@@ -62,6 +66,7 @@ device = torch.device(dev)
 
 # Define transform to perform data augmentation during inference
 sigmoid = nn.Sigmoid()
+softmax = nn.Softmax(dim=1)
 flip1 = Flip(spatial_axis=0)
 flip2 = Flip(spatial_axis=1)
 flip3 = Flip(spatial_axis=2)
@@ -96,6 +101,35 @@ dataset_test = CacheDataset(data_test, transform)
 test_data = DataLoader(dataset_test, batch_size=1, num_workers=4)
 
 # %% Peform inference
+
+
+# GEOMETRY-AWARE REFINEMENT
+
+def gaussian_map_ddt(patch_size, zu):
+    tmp = np.ones(patch_size)
+    sigma = (zu / 3)
+    gaussian_importance_map = gaussian_filter(tmp, sigma, 0, mode='constant', cval=0)
+    gaussian_importance_map = gaussian_importance_map.astype(np.float32)
+
+    return gaussian_importance_map
+
+
+print('GEOMETRY-AWARE REFINEMENT: preparing soften ball')
+channel_dim = 2
+list_kernel = []
+str_ = channel_dim - 1
+k = args.K
+for radius in range(1, k):
+    print(radius)
+    kernel = torch.as_tensor(np.repeat(np.expand_dims(ball(radius), 0)[np.newaxis, ...], str_, axis=0),
+                             dtype=torch.float16).to(device)
+    gaussian_gar = torch.as_tensor(
+        np.repeat(np.expand_dims(gaussian_map_ddt(kernel[0, 0].size(), radius), 0)[np.newaxis, ...], str_, axis=0),
+        dtype=torch.float16).to(device)
+    kernel = gaussian_gar * kernel
+    list_kernel.append(kernel)
+    del kernel, gaussian_gar
+    
 print()
 print("Load model ...")
 model = torch.load(args.dir_training + "/final_model.pth")
@@ -161,8 +195,6 @@ with torch.no_grad():
         X3 = X3.float()
         X4 = X4.float()
 
-        add = EnsureChannelFirst()
-
         print()
         print("To GPU ...")
         X1 = X1.to(device)
@@ -174,25 +206,25 @@ with torch.no_grad():
             
         print()
         print("Inference image1...")
-        Y1 = sliding_window_inference(inputs=X1, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
+        Y1, dmt = sliding_window_inference(inputs=X1, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
         if args.augmentation:
             print()
             print("Inference image2...")
-            Y2 = sliding_window_inference(inputs=X2, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
+            Y2, _ = sliding_window_inference(inputs=X2, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
         
             print()
             print("Inference image3...")
-            Y3 = sliding_window_inference(inputs=X3, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
+            Y3, _ = sliding_window_inference(inputs=X3, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
     
             print()
             print("Inference image4...")
-            Y4 = sliding_window_inference(inputs=X4, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
+            Y4, _ = sliding_window_inference(inputs=X4, roi_size=(args.patch_size[0], args.patch_size[1], args.patch_size[2]), predictor=model, sw_batch_size=1, overlap=0.25, mode='gaussian', progress=True)
            
             print()
             print("Flip back ...")
-            Y2 = add(flip1(Y2[0]))
-            Y3 = add(flip2(Y3[0]))
-            Y4 = add(flip3(Y4[0]))
+            Y2 = flip1(Y2[0]).view(1, 1, H, D, W)
+            Y3 = flip2(Y3[0]).view(1, 1, H, D, W)
+            Y4 = flip3(Y4[0]).view(1, 1, H, D, W)
             
         Y1 = sigmoid(Y1)
         if args.augmentation:
@@ -209,6 +241,26 @@ with torch.no_grad():
         print("New shape:")
         print(y_pred.shape)
         
+        #GEOMETRY-AWARE REFINEMENT
+        print('GEOMETRY-AWARE REFINEMENT: applying soften ball...')
+        ys, yv = torch.zeros_like(y_pred,dtype= torch.float16).to(device), torch.zeros_like(y_pred,dtype= torch.float16).to(device)
+        dmt = torch.argmax(softmax(dmt), dim=1)
+        print(torch.sum(dmt))
+        print(torch.unique(dmt))
+        skel = y_pred > 0.9
+        skel = skel.type(torch.int).type(torch.float16)
+        for radius in range(1,k):
+             print(radius)
+             kernel = list_kernel[radius-1]
+             yv = dmt == radius
+             print(torch.sum(yv))
+             ys.add_(torch.clamp(torch.nn.functional.conv3d(skel*yv, kernel, padding=radius, groups=str_), 0, 1))
+             del kernel
+
+        ys = torch.clamp(ys, 0, 1)
+
+        y_pred *= ys
+        
         # Tresholding to binary segmentation
         y_pred = nn.functional.threshold(y_pred, threshold=0.5, value=0)
         y_pred = torch.where(y_pred > 0, torch.ones(y_pred.shape, dtype=torch.float, device=device), y_pred)
@@ -218,8 +270,8 @@ with torch.no_grad():
         y_true = nn.functional.one_hot(y[0][0].long())
         
         # Permute axis and add channel to have [B, C, H, D, W]
-        y_pred = add(y_pred.permute(3, 0, 1, 2))
-        y_true = add(y_true.permute(3, 0, 1, 2))
+        y_pred = y_pred.permute(3, 0, 1, 2).view(1, 2, H, D, W)
+        y_true = y_true.permute(3, 0, 1, 2).view(1, 2, H, D, W)
         
         # Post-processing
         remove_small_objects_transform = RemoveSmallObjects(min_size=100)
