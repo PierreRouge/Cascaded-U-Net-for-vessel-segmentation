@@ -38,9 +38,8 @@ def distance_transform(binary_array):
 
 def loss_ddt(K):
     def loss(y_pred, y_true):
-        b, c, s1, s2, s3 = y_pred.shape
         y_pred_softmax = softmax(y_pred)
-        wv = torch.abs(torch.argmax(y_pred_softmax, dim=1) - y_true.view(b, s1, s2, s3)) / K
+        wv = torch.abs(torch.argmax(y_pred_softmax, dim=1) - y_true) / K
         max_tensor, _ = torch.max(y_pred_softmax, dim=1)
         value = torch.mean(wv * torch.log(1 - max_tensor))
         return value
@@ -82,14 +81,25 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
                 y_val_dtm = y_val_dtm.to(device)
                 b, c, s1, s2, s3 = y_val_dtm.shape
                 
+       
                 X_val = X_val.float()
                 X_val = X_val.to(device)
                 
                 pred_val_seg, pred_val_dtm = model(X_val)
                 pred_val_seg = sigmoid(pred_val_seg)
                 # pred_val_dtm = softmax(pred_val_dtm)
-  
-                val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm.view(b, s1, s2, s3).long()) + loss_term(pred_val_dtm, y_val_dtm)
+                
+                
+                print("Unique pred val dtm")
+                print(torch.max(softmax(pred_val_dtm)))
+                print("Unique pred val dtm")
+                print(torch.unique(torch.argmax(softmax(pred_val_dtm), dim=1)))
+                print("Unique y dtm val")
+                print(torch.unique(y_val_dtm.long()))
+                
+                
+                y_val_dtm = torch.clamp(y_val_dtm.view(b, s1, s2, s3).long(), min=0, max=K - 1)
+                val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm) + loss_term(pred_val_dtm, y_val_dtm)
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
                 
@@ -133,10 +143,18 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             X = X.to(device)
             pred_seg, pred_dtm = model(X)
             pred_seg = sigmoid(pred_seg)
+            
+            print("Unique pred dtm")
+            print(torch.max(softmax(pred_dtm)))
+            print("Unique pred dtm")
+            print(torch.unique(torch.argmax(softmax(pred_dtm), dim=1)))
+            print("Unique y dtm")
+            print(torch.unique(y_dtm.long()))
 
             loss_dice = loss_0(pred_seg, y_seg)
             loss_bce = loss_1(pred_seg, y_seg)
-            loss_dtm = loss_ce_dtm(pred_dtm, y_dtm.view(b, s1, s2, s3).long())
+            y_dtm = torch.clamp(y_dtm.view(b, s1, s2, s3).long(), min=0, max=K - 1)
+            loss_dtm = loss_ce_dtm(pred_dtm, y_dtm)
             loss_dist = loss_term(pred_dtm, y_dtm)
             loss = 0.5 * (loss_dice + loss_bce) + 0.5 * (loss_dtm + loss_dist)
             train_loss += loss.item()
@@ -152,11 +170,11 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             dice = dice.cpu().detach().numpy()
             dice = np.mean(dice)
             
-            debug_dtm = torch.argmax(softmax(pred_dtm), dim=1)
-            print("Sum dtm")
-            print(torch.sum(debug_dtm))
-            print("Unique dtm")
-            print(torch.unique(debug_dtm))
+            # debug_dtm = torch.argmax(softmax(pred_dtm), dim=1)
+            # print("Sum dtm")
+            # print(torch.sum(debug_dtm))
+            # print("Unique dtm")
+            # print(torch.unique(debug_dtm))
             
 
             # Backpropagation
@@ -185,7 +203,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
    
     
 if __name__ == '__main__':
-    dir_data = '/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/GT/*'
+    dir_data = '/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/GT/*'
     
     for f in glob(dir_data):
         image = nib.load(f)
@@ -199,19 +217,19 @@ if __name__ == '__main__':
         
         print(np.unique(dtm))
         print(np.sum(dtm))
-        print("Number of radius=0")
-        print(np.sum(dtm==0))
-        print("Number of radius=1")
-        print(np.sum(dtm==1))
-        print("Number of radius=2")
-        print(np.sum(dtm==2))
-        print("Number of radius=3")
-        print(np.sum(dtm==3))
-        print("Number of radius=4")
-        print(np.sum(dtm==4))
-        print("Number of radius=5")
-        print(np.sum(dtm==5))
-        print("Number of radius=6")
-        print(np.sum(dtm==6))
-        print("Number of radius=7")
-        print(np.sum(dtm==7))
+        # print("Number of radius=0")
+        # print(np.sum(dtm==0))
+        # print("Number of radius=1")
+        # print(np.sum(dtm==1))
+        # print("Number of radius=2")
+        # print(np.sum(dtm==2))
+        # print("Number of radius=3")
+        # print(np.sum(dtm==3))
+        # print("Number of radius=4")
+        # print(np.sum(dtm==4))
+        # print("Number of radius=5")
+        # print(np.sum(dtm==5))
+        # print("Number of radius=6")
+        # print(np.sum(dtm==6))
+        # print("Number of radius=7")
+        # print(np.sum(dtm==7))
