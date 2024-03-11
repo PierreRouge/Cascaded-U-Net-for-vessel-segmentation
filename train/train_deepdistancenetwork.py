@@ -58,6 +58,7 @@ parser.add_argument('--features', nargs='+', type=int, default=[2, 2, 2, 2, 2, 2
 parser.add_argument('--patch_size', nargs='+', type=int, default=[96, 96, 96], help='Patch _size')
 parser.add_argument("--scheduler", help="Set learning rate scheduler for training", action="store_true")
 parser.add_argument("--nesterov", help="Use SGD with nesterov momentum", action="store_true")
+parser.add_argument("--cpu", help="Use cpu for computation", action="store_true")
 parser.add_argument('--entity', metavar='entity', type=str, default='pierre-rouge', help='Entity for W&B')
 args = parser.parse_args()
 
@@ -67,6 +68,9 @@ if torch.cuda.is_available():
 else:
     dev = "cpu"
 device = torch.device(dev)
+
+if args.cpu:
+    device = torch.device("cpu")
 
 
 # Save parameters for training and ceate res directories
