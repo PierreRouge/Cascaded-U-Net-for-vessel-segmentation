@@ -53,8 +53,12 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
     if loss_param == "deep-distance-transform":
         loss_0 = dice_loss_pytorch
         loss_1 = nn.BCELoss()
-        weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
-        # weights = torch.tensor([1.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], device=device)
+        
+        if K == 8:
+            weights = torch.tensor([1 / 25000000, 1 / 100000, 1 / 5000, 1 / 800, 1 / 150, 1 / 50, 1 / 20, 1 / 5], device=device)
+            # weights = torch.tensor([1.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], device=device)
+        elif K == 7:
+            weights = torch.tensor([1 / 25000000, 1 / 70000, 1 / 10000, 1 / 1000, 1 / 100, 1 / 10, 1], device=device)
         loss_ce_dtm = nn.CrossEntropyLoss(weight=weights)
         loss_term = loss_ddt(K)
         
@@ -181,7 +185,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
    
     
 if __name__ == '__main__':
-    dir_data = '/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/GT/*'
+    dir_data = '/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/GT/*'
     
     for f in glob(dir_data):
         image = nib.load(f)
