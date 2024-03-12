@@ -59,7 +59,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
         elif K == 7:
             weights = torch.tensor([1 / 25000000, 1 / 70000, 1 / 10000, 1 / 1000, 1 / 100, 1 / 10, 1], device=device)
         loss_ce_dtm = nn.CrossEntropyLoss(weight=weights)
-        loss_term = loss_ddt(K)
+        # loss_term = loss_ddt(K)
         
         model.eval()
         val_loss_0 = 0.0
@@ -99,7 +99,7 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
                 
                 
                 y_val_dtm = torch.clamp(y_val_dtm.view(b, s1, s2, s3).long(), min=0, max=K - 1)
-                val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm) + loss_term(pred_val_dtm, y_val_dtm)
+                val_loss = loss_0(pred_val_seg, y_val_seg) + loss_1(pred_val_seg, y_val_seg) + loss_ce_dtm(pred_val_dtm, y_val_dtm) #+ loss_term(pred_val_dtm, y_val_dtm)
                 val_loss = val_loss.item()
                 val_loss_0 += val_loss
                 
@@ -155,8 +155,8 @@ def train_loop_DeepDistance(dataloader, validloader, model, loss_param, input_, 
             loss_bce = loss_1(pred_seg, y_seg)
             y_dtm = torch.clamp(y_dtm.view(b, s1, s2, s3).long(), min=0, max=K - 1)
             loss_dtm = loss_ce_dtm(pred_dtm, y_dtm)
-            loss_dist = loss_term(pred_dtm, y_dtm)
-            loss = 0.5 * (loss_dice + loss_bce) + 0.5 * (loss_dtm + loss_dist)
+            #loss_dist = loss_term(pred_dtm, y_dtm)
+            loss = 0.5 * (loss_dice + loss_bce) + 0.5 * loss_dtm #+ loss_dist
             train_loss += loss.item()
             train_loss_dice += loss_dice.item()
             train_loss_bce += loss_bce.item()

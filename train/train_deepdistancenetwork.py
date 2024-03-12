@@ -48,7 +48,7 @@ parser.add_argument('--batch_size', metavar='batch_size', type=int, nargs="?", d
 parser.add_argument('--learning_rate', metavar='learning_rate', type=float, nargs="?", default=0.01, help='Learning rate for training phase')
 parser.add_argument('--loss_param', metavar='loss_param', type=str, nargs="?", default='deep-distance-transform', help='Choose loss function')
 parser.add_argument('--K', metavar='K', type=int, nargs="?", default=8, help='Number of class for distance map')
-parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=3, help='Number of epochs for training phase')
+parser.add_argument('--epochs', metavar='epochs', type=int, nargs="?", default=100, help='Number of epochs for training phase')
 parser.add_argument('--opt', metavar='opt', type=str, nargs="?", default='SGD', help='Optimizer used during training')
 parser.add_argument('--fold', metavar='fold', type=int, nargs="?", default=0, help='Fold to choose')
 parser.add_argument('--nbr_batch_epoch', nargs='?', type=int, default=3, help='Number of batch by epoch')
