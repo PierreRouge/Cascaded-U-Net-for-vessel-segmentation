@@ -381,8 +381,8 @@ def b0_error_numpy(y_true, y_pred, method='difference'):
     _, ncc_true = label(y_true, return_num=True)
     _, ncc_pred = label(y_pred, return_num=True)
     
-    b0_true= ncc_true - 1
-    b0_pred = ncc_pred - 1
+    b0_true= ncc_true
+    b0_pred = ncc_pred
     
     if method == 'difference' :
         b0_error = np.absolute(b0_true - b0_pred)
@@ -399,8 +399,8 @@ def b1_error_numpy(y_true, y_pred, method='difference'):
     _, ncc_true = label(y_true, return_num=True)
     _, ncc_pred = label(y_pred, return_num=True)
     
-    b0_true= ncc_true - 1
-    b0_pred = ncc_pred - 1
+    b0_true= ncc_true
+    b0_pred = ncc_pred
     
     y_true_inverse = np.ones(y_true.shape) - y_true
     y_pred_inverse = np.ones(y_pred.shape) - y_pred
