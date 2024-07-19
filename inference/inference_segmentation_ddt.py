@@ -38,10 +38,11 @@ warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is
 # %% Define model, data and outputs directories
 
 parser = argparse.ArgumentParser(description='Inference for segmentation')
-parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/deep_distance/saved_for_inference/Unet_ddt_fold0_Bullitt_18', help='Training directory')
+parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/deep_distance/saved_for_inference/Unet_ddt_fold0_Bullitt_47', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/home/rouge/Documents/Thèse_Rougé_Pierre/Data/Bullit/raw/', help='Data directory')
 parser.add_argument('--K', metavar='K', type=int, nargs="?", default=8, help='Number of class for distance map')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
+parser.add_argument('--spacing', nargs='+', type=float, default=[0.5134, 0.5134, 0.8000], help='Spacing')
 parser.add_argument("--augmentation", default=False, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
@@ -86,6 +87,7 @@ for (root, directory, file) in os.walk(dir_inputs):
             headers = image.header
             pixdim = headers['pixdim'][1:4]
             data_test.append(dict(zip(['image1', 'image2', 'image3', 'image4', 'GT', 'filename', 'pixdim'], [dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz', f, pixdim])))
+            break
 
 # Define transforms
 keys = ('image1', 'image2', 'image3', 'image4', 'GT')
@@ -252,7 +254,7 @@ with torch.no_grad():
         for radius in range(1,k):
              print(radius)
              kernel = list_kernel[radius-1]
-             yv = dmt == radius
+             yv = dmt == radius - 1
              print(torch.sum(yv))
              ys.add_(torch.clamp(torch.nn.functional.conv3d(skel*yv, kernel, padding=radius, groups=str_), 0, 1))
              del kernel
@@ -288,10 +290,10 @@ with torch.no_grad():
         dice_metric = DiceMetric(include_background=False)
         
         # Compute metrics from monai
-        assd = assd_metric(y_pred, y_true).item()
-        hd = hd_metric(y_pred, y_true).item()
-        hd95 = hd95_metric(y_pred, y_true).item()
-        surface_dice = surface_dice_metric(y_pred, y_true).item()
+        assd = assd_metric(y_pred, y_true, spacing=args.spacing).item()
+        hd = hd_metric(y_pred, y_true, spacing=args.spacing).item()
+        hd95 = hd95_metric(y_pred, y_true, spacing=args.spacing).item()
+        surface_dice = surface_dice_metric(y_pred, y_true, spacing=args.spacing).item()
         
         # From one-hot to standard format
         y_pred = torch.argmax(y_pred, dim=1)
