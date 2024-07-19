@@ -38,6 +38,7 @@ parser = argparse.ArgumentParser(description='Inference for segmentation')
 parser.add_argument('--dir_training', metavar='dir_training', type=str, nargs="?", default='/home/rouge/Documents/git/Cascaded-U-Net-for-vessel-segmentation/res/cascaded-unet/cascaded-unet_fold0_IXI_2', help='Training directory')
 parser.add_argument('--dir_data', metavar='dir_data', type=str, nargs="?", default='/run/media/rouge/HDD_NVO/IXI_temporaire/IXI/IXI/Guys/', help='Data directory')
 parser.add_argument('--patch_size', nargs='+', type=int, default=[192, 192, 64], help='Patch _size')
+parser.add_argument('--spacing', nargs='+', type=int, default=[0.5134, 0.5134, 0.8000], help='Patch _size')
 parser.add_argument("--augmentation", default=True, help="Do test time augmentation", action="store_true")
 parser.add_argument("--postprocessing", default=True, help="Do postprocessing", action="store_true")
 args = parser.parse_args()
@@ -236,10 +237,10 @@ with torch.no_grad():
         dice_metric = DiceMetric(include_background=False)
         
         # Compute metrics from monai
-        assd = assd_metric(y_pred, y_true).item()
-        hd = hd_metric(y_pred, y_true).item()
-        hd95 = hd95_metric(y_pred, y_true).item()
-        surface_dice = surface_dice_metric(y_pred, y_true).item()
+        assd = assd_metric(y_pred, y_true, spacing=args.spacing).item()
+        hd = hd_metric(y_pred, y_true, spacing=args.spacing).item()
+        hd95 = hd95_metric(y_pred, y_true, spacing=args.spacing).item()
+        surface_dice = surface_dice_metric(y_pred, y_true, spacing=args.spacing).item()
         
         # From one-hot to standard format
         y_pred = torch.argmax(y_pred, dim=1)
