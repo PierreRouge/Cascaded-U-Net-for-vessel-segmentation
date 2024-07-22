@@ -87,7 +87,6 @@ for (root, directory, file) in os.walk(dir_inputs):
             headers = image.header
             pixdim = headers['pixdim'][1:4]
             data_test.append(dict(zip(['image1', 'image2', 'image3', 'image4', 'GT', 'filename', 'pixdim'], [dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_inputs + '/' + f, dir_GT + '/' + name + '_GT.nii.gz', f, pixdim])))
-            break
 
 # Define transforms
 keys = ('image1', 'image2', 'image3', 'image4', 'GT')
